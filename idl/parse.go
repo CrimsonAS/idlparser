@@ -158,13 +158,25 @@ func (pb *ParseBuf) tok() token {
 	if pb.atEnd() {
 		pb.isEof = true
 		pb.reportError(fmt.Errorf("unexpected EOF"))
-		return token{tokenEndLine, ""}
+		return token{tokenInvalid, ""}
 	}
 	return pb.lb.tokens[pb.ppos]
 }
 
-// Advance the parse stream
+// Advance the parse stream to the next non-newline token.
 func (pb *ParseBuf) advance() {
+	for {
+		pb.advanceAndDontSkipNewLines()
+
+		// Skip all whitespace tokens.
+		if pb.tok().id != tokenEndLine {
+			break
+		}
+	}
+}
+
+// Advance the parse stream one position
+func (pb *ParseBuf) advanceAndDontSkipNewLines() {
 	if parseDebug {
 		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.lb.tokens[pb.ppos], pb.lb.tokens[pb.ppos+1])
 	}

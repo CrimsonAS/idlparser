@@ -34,11 +34,15 @@ func (pb *ParseBuf) parseDefineDirective() {
 	}
 
 	varName := pb.tok().value
-	pb.advance()
+	pb.advanceAndDontSkipNewLines()
 
 	if !pb.atEnd() && pb.tok().id == tokenWord {
 		varValue := pb.tok().value
-		pb.advance()
+		// Don't skip newlines so that:
+		// #define FOO
+		// Something
+		// isn't treated as "#define FOO Something".
+		pb.advanceAndDontSkipNewLines()
 		fmt.Printf("Define: %s val %s\n", varName, varValue)
 	} else {
 		fmt.Printf("Define: %s no value\n", varName)

@@ -36,6 +36,8 @@ func (tok tokenId) String() string {
 		val = "\\n"
 	case tokenComma:
 		val = ","
+	case tokenInvalid:
+		val = "(invalid)"
 	default:
 		val = "(wtf)"
 	}
@@ -79,6 +81,9 @@ const (
 
 	// ,
 	tokenComma = iota
+
+	// Used for error handling
+	tokenInvalid = iota
 )
 
 type token struct {
