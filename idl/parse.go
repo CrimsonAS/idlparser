@@ -6,6 +6,8 @@ import (
 
 const parseDebug = false
 
+// A context id is used to drive the internal state machine. It is not needed
+// outside the parser.
 type contextId int32
 
 func (ctx contextId) String() string {
@@ -47,6 +49,8 @@ const (
 	contextInterface = iota
 )
 
+// A ParseBuf is a parser. It consumes a series of lexed tokens to understand
+// the IDL file.
 type ParseBuf struct {
 	lb           *LexBuf
 	contextStack []context
@@ -55,6 +59,7 @@ type ParseBuf struct {
 	isEof        bool
 }
 
+// Report an error during parsing. Further parsing will be aborted.
 func (pb *ParseBuf) reportError(err error) {
 	// Ignore all errors after EOF, as they are likely bogus (due to our
 	// returning a silly token in that case to avoid crashes).
@@ -64,10 +69,12 @@ func (pb *ParseBuf) reportError(err error) {
 	}
 }
 
+// Does the parsing have an error already?
 func (pb *ParseBuf) hasError() bool {
 	return len(pb.errors) != 0
 }
 
+// Create a ParseBuf from a LexBuf's tokens.
 func NewParseBuf(lexBuf *LexBuf) *ParseBuf {
 	pb := &ParseBuf{
 		lb:    lexBuf,
@@ -76,81 +83,8 @@ func NewParseBuf(lexBuf *LexBuf) *ParseBuf {
 	return pb
 }
 
-func (pb *ParseBuf) parseDefineDirective() {
-	pb.advance()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("unexpected non-word"))
-		return
-	}
-
-	varName := pb.tok().value
-	pb.advance()
-
-	if !pb.atEnd() && pb.tok().id == tokenWord {
-		varValue := pb.tok().value
-		pb.advance()
-		fmt.Printf("Define: %s val %s\n", varName, varValue)
-	} else {
-		fmt.Printf("Define: %s no value\n", varName)
-	}
-}
-
-func (pb *ParseBuf) parseIncludeDirective() {
-	pb.advance()
-
-	if pb.tok().id != tokenStringLiteral {
-		pb.reportError(fmt.Errorf("unexpected non-string-literal"))
-		return
-	}
-
-	fileName := pb.tok().value
-	pb.advance()
-
-	fmt.Printf("Included: %s\n", fileName)
-}
-
-// The entry point for directives.
-func (pb *ParseBuf) parseTokenHash() {
-	pb.advance() // skip #
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("unexpected non-word"))
-		return
-	}
-
-	directive := pb.tok().value
-
-	switch directive {
-	case "define":
-		pb.parseDefineDirective()
-	case "include":
-		pb.parseIncludeDirective()
-	default:
-		pb.reportError(fmt.Errorf("unexpected directive: %s", directive))
-	}
-}
-
-func (pb *ParseBuf) parseModule() {
-	pb.advance()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected module name"))
-		return
-	}
-
-	moduleName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenOpenBrace {
-		pb.reportError(fmt.Errorf("expected module contents"))
-		return
-	}
-
-	pb.advance()
-	pb.pushContext(contextModule, moduleName)
-}
-
+// Small helper to read a type name. A type name is a bit "special" since it
+// might be one word ("int"), or multiple ("unsigned int").
 func (pb *ParseBuf) parseType() string {
 	if pb.tok().id != tokenWord {
 		pb.reportError(fmt.Errorf("expected constant type"))
@@ -174,260 +108,8 @@ func (pb *ParseBuf) parseType() string {
 	return constType
 }
 
-func (pb *ParseBuf) parseTypedef() {
-	pb.advance()
-
-	fromName := pb.parseType()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected to name"))
-		return
-	}
-
-	toName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenSemicolon {
-		pb.reportError(fmt.Errorf("expected semicolon, got: %s", pb.tok().id))
-		return
-	}
-
-	pb.advance()
-	fmt.Printf("Typedef: %s to %s\n", fromName, toName)
-}
-
-func (pb *ParseBuf) parseStruct() {
-	pb.advance()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected struct name"))
-		return
-	}
-
-	structName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenOpenBrace {
-		pb.reportError(fmt.Errorf("expected struct contents"))
-		return
-	}
-
-	pb.advance()
-	pb.pushContext(contextStruct, structName)
-}
-
-func (pb *ParseBuf) parseConst() {
-	pb.advance()
-
-	constType := pb.parseType()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected constant name"))
-		return
-	}
-
-	constName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenEquals {
-		pb.reportError(fmt.Errorf("expected equals"))
-		return
-	}
-
-	pb.advance()
-
-	if pb.tok().id != tokenWord && pb.tok().id != tokenStringLiteral {
-		pb.reportError(fmt.Errorf("expected constant value"))
-		return
-	}
-
-	constValue := ""
-	for pb.tok().id == tokenWord || pb.tok().id == tokenStringLiteral {
-		constValue += pb.tok().value
-		pb.advance()
-	}
-
-	if pb.tok().id != tokenSemicolon {
-		pb.reportError(fmt.Errorf("expected semicolon"))
-		return
-	}
-
-	pb.advance()
-	fmt.Printf("Got constant: %s of type %s with value %s\n", constName, constType, constValue)
-}
-
-func (pb *ParseBuf) parseEnum() {
-	pb.advance()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected enum name"))
-		return
-	}
-
-	enumName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenOpenBrace {
-		pb.reportError(fmt.Errorf("expected enum contents"))
-		return
-	}
-
-	pb.advance()
-	pb.pushContext(contextEnum, enumName)
-}
-
-func (pb *ParseBuf) parseEnumMember() {
-	// no leading advance, as we start at the name of the enum member.
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected enum value"))
-		return
-	}
-
-	enumValue := pb.tok().value
-	pb.advance()
-
-	for pb.tok().id == tokenComma {
-		// eat the comma(s)
-		pb.advance()
-	}
-
-	fmt.Printf("Read enum member: %s\n", enumValue)
-}
-
-func (pb *ParseBuf) parseStructMember() {
-	typeName := pb.parseType()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected member name"))
-		return
-	}
-
-	memberName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenSemicolon {
-		pb.reportError(fmt.Errorf("expected semicolon"))
-		return
-	}
-
-	pb.advance()
-	fmt.Printf("Read struct member: %s of type %s\n", memberName, typeName)
-}
-
-func (pb *ParseBuf) parseInterface() {
-	pb.advance()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected interface name"))
-		return
-	}
-
-	interfaceName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id == tokenSemicolon {
-		// interface Foo;
-		fmt.Printf("Read empty interface %s\n", interfaceName)
-		pb.advance()
-		return
-	}
-
-	if pb.tok().id == tokenOpenBrace {
-		// interface Foo {
-		fmt.Printf("Read non-inheriting interface %s\n", interfaceName)
-		pb.advance()
-		pb.pushContext(contextInterface, interfaceName)
-		return
-	}
-
-	if pb.tok().id == tokenColon {
-		// interface Foo : Bar {
-		pb.advance()
-
-		for pb.tok().id == tokenWord || pb.tok().id == tokenEndLine {
-			// This feels a bit nasty...
-			for pb.tok().id == tokenEndLine {
-				pb.advance()
-			}
-			if pb.tok().id != tokenWord {
-				pb.reportError(fmt.Errorf("expected interface inheritance name"))
-				return
-			}
-
-			inheritsName := pb.tok().value
-			fmt.Printf("Got interface %s inheriting %s\n", interfaceName, inheritsName)
-			pb.advance()
-
-			// Multiple inheritance
-			if pb.tok().id == tokenComma {
-				pb.advance()
-			} else if pb.tok().id != tokenOpenBrace {
-				pb.reportError(fmt.Errorf("expected open brace"))
-				return
-			}
-		}
-
-		if pb.tok().id != tokenOpenBrace {
-			pb.reportError(fmt.Errorf("expected open brace"))
-			return
-		}
-
-		pb.advance()
-		pb.pushContext(contextInterface, interfaceName)
-		return
-	}
-
-	pb.reportError(fmt.Errorf("invalid interface definition"))
-	return
-}
-
-func (pb *ParseBuf) parseInterfaceMember() {
-	returnType := pb.parseType()
-
-	if pb.tok().id != tokenWord {
-		pb.reportError(fmt.Errorf("expected interface member name"))
-		return
-	}
-
-	memberName := pb.tok().value
-	pb.advance()
-
-	if pb.tok().id != tokenOpenBracket {
-		pb.reportError(fmt.Errorf("expected open bracket"))
-		return
-	}
-
-	fmt.Printf("Found interface member name %s returning type %s\n", memberName, returnType)
-	pb.advance()
-
-	if pb.tok().id == tokenCloseBracket {
-		// void foo();
-		pb.advance()
-		if pb.tok().id != tokenSemicolon {
-			pb.reportError(fmt.Errorf("expected semicolon"))
-			return
-		}
-		pb.advance()
-		return
-	}
-
-	param := ""
-	for pb.tok().id == tokenWord || pb.tok().id == tokenComma || pb.tok().id == tokenEndLine {
-		switch pb.tok().id {
-		case tokenEndLine:
-			// do nothing
-		case tokenWord:
-			param += pb.tok().value + " "
-		case tokenComma:
-			fmt.Printf("Member takes: %s\n", param)
-			param = ""
-		}
-		pb.advance()
-	}
-	fmt.Printf("Member takes: %s\n", param)
-}
-
+// Parse a regular word. It might be a keyword (like 'struct' or 'module', or it
+// might be a type name (in struct or interface members).
 func (pb *ParseBuf) parseTokenWord() {
 	word := pb.tok().value
 
@@ -435,6 +117,7 @@ func (pb *ParseBuf) parseTokenWord() {
 	case contextGlobal:
 		fallthrough
 	case contextModule:
+		// Regular contexts only allow a certain set of keywords.
 		switch word {
 		case "module":
 			pb.parseModule()
@@ -452,6 +135,9 @@ func (pb *ParseBuf) parseTokenWord() {
 			pb.reportError(fmt.Errorf("unexpected keyword in global/module context: %s", word))
 			return
 		}
+
+	// For other contexts, they are supposed to validate the contents
+	// themselves.
 	case contextStruct:
 		pb.parseStructMember()
 	case contextEnum:
@@ -461,11 +147,13 @@ func (pb *ParseBuf) parseTokenWord() {
 	}
 }
 
+// Is the ParseBuf at the end of the token stream?
 func (pb *ParseBuf) atEnd() bool {
 	// ### right?
 	return pb.ppos >= len(pb.lb.tokens)-1
 }
 
+// Return the current token under parsing
 func (pb *ParseBuf) tok() token {
 	if pb.atEnd() {
 		pb.isEof = true
@@ -475,6 +163,7 @@ func (pb *ParseBuf) tok() token {
 	return pb.lb.tokens[pb.ppos]
 }
 
+// Advance the parse stream
 func (pb *ParseBuf) advance() {
 	if parseDebug {
 		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.lb.tokens[pb.ppos], pb.lb.tokens[pb.ppos+1])
@@ -482,6 +171,7 @@ func (pb *ParseBuf) advance() {
 	pb.ppos += 1
 }
 
+// Initiate the parsing process
 func (pb *ParseBuf) Parse() {
 	pb.pushContext(contextGlobal, "")
 
