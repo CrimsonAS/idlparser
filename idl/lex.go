@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const lexDebug = false
+
 type tokenId int
 
 func (tok tokenId) String() string {
@@ -16,6 +18,8 @@ func (tok tokenId) String() string {
 		val = "#"
 	case tokenStringLiteral:
 		val = "quoted string"
+	case tokenColon:
+		val = ":"
 	case tokenSemicolon:
 		val = ";"
 	case tokenOpenBrace:
@@ -28,6 +32,10 @@ func (tok tokenId) String() string {
 		val = ")"
 	case tokenEquals:
 		val = "="
+	case tokenEndLine:
+		val = "\\n"
+	case tokenComma:
+		val = ","
 	default:
 		val = "(wtf)"
 	}
@@ -37,13 +45,16 @@ func (tok tokenId) String() string {
 
 const (
 	// Any bare word, could be a keyword like module or a struct name.
-	tokenWord = 99
+	tokenWord = iota
 
 	// '#'
 	tokenHash = iota
 
 	// A quoted string
 	tokenStringLiteral = iota
+
+	// :
+	tokenColon = iota
 
 	// ;
 	tokenSemicolon = iota
@@ -62,11 +73,21 @@ const (
 
 	// =
 	tokenEquals = iota
+
+	// \n
+	tokenEndLine = iota
+
+	// ,
+	tokenComma = iota
 )
 
 type token struct {
 	id    tokenId
 	value string
+}
+
+func (tok token) String() string {
+	return fmt.Sprintf("%s(%s)", tok.id, tok.value)
 }
 
 type LexBuf struct {
@@ -83,8 +104,6 @@ func NewLexBuf(d []byte) *LexBuf {
 	}
 	return lb
 }
-
-const lexDebug = false
 
 func (lb *LexBuf) pushToken(tok tokenId, val string) {
 	if lexDebug {
@@ -110,7 +129,7 @@ func (lb *LexBuf) cur() byte {
 }
 
 func (lb *LexBuf) skipWhitespace() {
-	for !lb.atEnd() && (lb.cur() == ' ' || lb.cur() == '\t' || lb.cur() == '\n') {
+	for !lb.atEnd() && (lb.cur() == ' ' || lb.cur() == '\t') {
 		lb.advance()
 	}
 }
@@ -130,6 +149,8 @@ func (lb *LexBuf) readUntilNot(delims []byte) ([]byte, error) {
 		if found {
 			buf = append(buf, lb.cur())
 			lb.advance()
+		} else {
+			lb.rewind()
 		}
 	}
 
@@ -180,6 +201,10 @@ func (lb *LexBuf) advance() {
 	lb.pos += 1
 }
 
+func (lb *LexBuf) rewind() {
+	lb.pos -= 1
+}
+
 func (lb *LexBuf) lexComment() {
 	if lb.next() == '/' {
 		lb.readUntil('\n')
@@ -203,7 +228,7 @@ func (lb *LexBuf) lexStringLiteral() {
 	lb.pushToken(tokenStringLiteral, string(buf))
 }
 
-var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_")
+var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_<>[]:")
 
 func (lb *LexBuf) lexWord() {
 	buf, err := lb.readUntilNot(validInIdentifiers)
@@ -237,10 +262,16 @@ func (lb *LexBuf) Lex() error {
 			lb.pushToken(tokenOpenBracket, "")
 		case lb.cur() == ')':
 			lb.pushToken(tokenCloseBracket, "")
+		case lb.cur() == ':':
+			lb.pushToken(tokenColon, "")
 		case lb.cur() == ';':
 			lb.pushToken(tokenSemicolon, "")
 		case lb.cur() == '=':
 			lb.pushToken(tokenEquals, "")
+		case lb.cur() == '\n':
+			lb.pushToken(tokenEndLine, "")
+		case lb.cur() == ',':
+			lb.pushToken(tokenComma, "")
 		case strings.IndexByte(string(validInIdentifiers), lb.cur()) >= 0:
 			lb.lexWord()
 		}
