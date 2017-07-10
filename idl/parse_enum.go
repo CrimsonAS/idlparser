@@ -6,7 +6,7 @@ import (
 
 // Handle the start of an enum
 // enum MyEnum {
-func (pb *ParseBuf) parseEnum() {
+func (pb *Parser) parseEnum() {
 	pb.advance()
 
 	if pb.tok().Id != TokenWord {
@@ -28,7 +28,7 @@ func (pb *ParseBuf) parseEnum() {
 
 // Handle a member in an enum
 // MyValue,
-func (pb *ParseBuf) parseEnumMember() {
+func (pb *Parser) parseEnumMember() {
 	// no leading advance, as we start at the name of the enum member.
 
 	if pb.tok().Id != TokenWord {

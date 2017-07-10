@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (pb *ParseBuf) parseConst() {
+func (pb *Parser) parseConst() {
 	pb.advance()
 
 	constType := pb.parseType()

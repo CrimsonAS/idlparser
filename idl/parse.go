@@ -49,9 +49,9 @@ const (
 	contextInterface
 )
 
-// A ParseBuf is a parser. It consumes a series of lexed tokens to understand
+// A Parser is a parser. It consumes a series of lexed tokens to understand
 // the IDL file.
-type ParseBuf struct {
+type Parser struct {
 	tokens       []Token
 	contextStack []context
 	ppos         int
@@ -72,7 +72,7 @@ type ParseBuf struct {
 }
 
 // Report an error during parsing. Further parsing will be aborted.
-func (pb *ParseBuf) reportError(err error) {
+func (pb *Parser) reportError(err error) {
 	// Ignore all errors after EOF, as they are likely bogus (due to our
 	// returning a silly token in that case to avoid crashes).
 	if !pb.isEof {
@@ -82,13 +82,13 @@ func (pb *ParseBuf) reportError(err error) {
 }
 
 // Does the parsing have an error already?
-func (pb *ParseBuf) hasError() bool {
+func (pb *Parser) hasError() bool {
 	return len(pb.errors) != 0
 }
 
-// Create a ParseBuf from a LexBuf's tokens.
-func NewParseBuf(toks []Token) *ParseBuf {
-	pb := &ParseBuf{
+// Create a Parser from a Lexer's tokens.
+func NewParser(toks []Token) *Parser {
+	pb := &Parser{
 		tokens:        toks,
 		isEof:         false,
 		currentModule: &Module{},
@@ -99,7 +99,7 @@ func NewParseBuf(toks []Token) *ParseBuf {
 
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
-func (pb *ParseBuf) parseType() string {
+func (pb *Parser) parseType() string {
 	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("expected constant type"))
 		return ""
@@ -124,7 +124,7 @@ func (pb *ParseBuf) parseType() string {
 
 // Parse a regular word. It might be a keyword (like 'struct' or 'module', or it
 // might be a type name (in struct or interface members).
-func (pb *ParseBuf) parseTokenWord() {
+func (pb *Parser) parseTokenWord() {
 	word := pb.tok().Value
 
 	switch pb.currentContext().id {
@@ -161,14 +161,14 @@ func (pb *ParseBuf) parseTokenWord() {
 	}
 }
 
-// Is the ParseBuf at the end of the token stream?
-func (pb *ParseBuf) atEnd() bool {
+// Is the Parser at the end of the token stream?
+func (pb *Parser) atEnd() bool {
 	// ### right?
 	return pb.ppos >= len(pb.tokens)-1
 }
 
 // Return the current token under parsing
-func (pb *ParseBuf) tok() Token {
+func (pb *Parser) tok() Token {
 	if pb.atEnd() {
 		pb.isEof = true
 		pb.reportError(fmt.Errorf("unexpected EOF"))
@@ -178,7 +178,7 @@ func (pb *ParseBuf) tok() Token {
 }
 
 // Advance the parse stream to the next non-newline token.
-func (pb *ParseBuf) advance() {
+func (pb *Parser) advance() {
 	for {
 		pb.advanceAndDontSkipNewLines()
 
@@ -190,7 +190,7 @@ func (pb *ParseBuf) advance() {
 }
 
 // Advance the parse stream one position
-func (pb *ParseBuf) advanceAndDontSkipNewLines() {
+func (pb *Parser) advanceAndDontSkipNewLines() {
 	if parseDebug {
 		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.tokens[pb.ppos], pb.tokens[pb.ppos+1])
 	}
@@ -198,7 +198,7 @@ func (pb *ParseBuf) advanceAndDontSkipNewLines() {
 }
 
 // Initiate the parsing process
-func (pb *ParseBuf) Parse() (Module, error) {
+func (pb *Parser) Parse() (Module, error) {
 	pb.pushContext(contextGlobal, "")
 
 	for !pb.atEnd() && !pb.hasError() {
@@ -235,7 +235,7 @@ func (pb *ParseBuf) Parse() (Module, error) {
 	return *pb.rootModule, nil
 }
 
-func (pb *ParseBuf) pushContext(ctx contextId, val string) {
+func (pb *Parser) pushContext(ctx contextId, val string) {
 	if parseDebug {
 		fmt.Printf("Opened context: %s (%s)\n", ctx, val)
 	}
@@ -265,7 +265,7 @@ func (pb *ParseBuf) pushContext(ctx contextId, val string) {
 	pb.contextStack = append(pb.contextStack, context{ctx, val})
 }
 
-func (pb *ParseBuf) popContext() {
+func (pb *Parser) popContext() {
 	cctx := pb.currentContext()
 
 	switch cctx.id {
@@ -287,6 +287,6 @@ func (pb *ParseBuf) popContext() {
 	pb.contextStack = pb.contextStack[:len(pb.contextStack)-1]
 }
 
-func (pb *ParseBuf) currentContext() context {
+func (pb *Parser) currentContext() context {
 	return pb.contextStack[len(pb.contextStack)-1]
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (pb *ParseBuf) parseTypedef() {
+func (pb *Parser) parseTypedef() {
 	pb.advance()
 
 	fromName := pb.parseType()

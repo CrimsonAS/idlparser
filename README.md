@@ -17,8 +17,6 @@ It's also missing test coverage.
 # TODO
 
 * Tests
-* Rename LexBuf to Lexer
-* Rename ParseBuf to Parser
 * Add source information to Token, and use it in parse errors
 
 ... more?

@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (pb *ParseBuf) parseModule() {
+func (pb *Parser) parseModule() {
 	pb.advance()
 
 	if pb.tok().Id != TokenWord {
