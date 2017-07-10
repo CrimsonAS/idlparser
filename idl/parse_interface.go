@@ -77,9 +77,7 @@ func (pb *parser) parseInterface() {
 }
 
 func (pb *parser) parseInterfaceMember() {
-	fmt.Printf("hi\n")
 	returnType := pb.parseType()
-	fmt.Printf("Got rt %s\n", returnType)
 
 	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected interface member name"))
