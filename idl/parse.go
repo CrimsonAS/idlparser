@@ -111,6 +111,12 @@ func (pb *parser) parseType() string {
 
 		constType += " " + pb.tok().Value
 		pb.advance()
+	} else if constType == "long" {
+		// "long long"
+		if pb.tok().Id == TokenWord && pb.tok().Value == "long" {
+			constType += " " + pb.tok().Value
+			pb.advance()
+		}
 	}
 
 	return constType
