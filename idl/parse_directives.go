@@ -8,7 +8,7 @@ import (
 func (pb *parser) parseTokenHash() {
 	pb.advance() // skip #
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("unexpected non-word"))
 		return
 	}
@@ -28,7 +28,7 @@ func (pb *parser) parseTokenHash() {
 func (pb *parser) parseDefineDirective() {
 	pb.advance()
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("unexpected non-word"))
 		return
 	}
@@ -36,7 +36,7 @@ func (pb *parser) parseDefineDirective() {
 	varName := pb.tok().Value
 	pb.advanceAndDontSkipNewLines()
 
-	if !pb.atEnd() && pb.tok().Id == TokenWord {
+	if !pb.atEnd() && pb.tok().Id == TokenIdentifier {
 		varValue := pb.tok().Value
 		// Don't skip newlines so that:
 		// #define FOO

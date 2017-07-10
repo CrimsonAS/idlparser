@@ -9,13 +9,12 @@ import (
 func (pb *parser) parseEnum() {
 	pb.advance()
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected enum name"))
 		return
 	}
 
-	enumName := pb.tok().Value
-	pb.advance()
+	enumName := pb.parseIdentifier()
 
 	if pb.tok().Id != TokenOpenBrace {
 		pb.reportError(fmt.Errorf("expected enum contents"))
@@ -31,7 +30,7 @@ func (pb *parser) parseEnum() {
 func (pb *parser) parseEnumMember() {
 	// no leading advance, as we start at the name of the enum member.
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected enum value"))
 		return
 	}

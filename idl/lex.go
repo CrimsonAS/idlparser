@@ -14,8 +14,10 @@ type TokenId int
 func (tok TokenId) String() string {
 	val := ""
 	switch tok {
-	case TokenWord:
-		val = "word"
+	case TokenKeyword:
+		val = "keyword"
+	case TokenIdentifier:
+		val = "identifier"
 	case TokenHash:
 		val = "#"
 	case TokenStringLiteral:
@@ -28,6 +30,10 @@ func (tok TokenId) String() string {
 		val = "{"
 	case TokenCloseBrace:
 		val = "}"
+	case TokenOpenSquareBracket:
+		val = "["
+	case TokenCloseSquareBracket:
+		val = "]"
 	case TokenOpenBracket:
 		val = "("
 	case TokenCloseBracket:
@@ -40,6 +46,12 @@ func (tok TokenId) String() string {
 		val = ","
 	case TokenInvalid:
 		val = "(invalid)"
+	case TokenLessThan:
+		val = "<"
+	case TokenGreaterThan:
+		val = ">"
+	case TokenNamespace:
+		val = "::"
 	default:
 		val = "(wtf)"
 	}
@@ -48,8 +60,11 @@ func (tok TokenId) String() string {
 }
 
 const (
-	// Any bare word, could be a keyword like module or a struct name.
-	TokenWord = iota
+	// A keyword (struct, interface, etc)
+	TokenKeyword = iota
+
+	// Any valid identifier (Foo in "struct Foo")
+	TokenIdentifier
 
 	// '#'
 	TokenHash
@@ -69,6 +84,12 @@ const (
 	// }
 	TokenCloseBrace
 
+	// [
+	TokenOpenSquareBracket
+
+	//
+	TokenCloseSquareBracket
+
 	// (
 	TokenOpenBracket
 
@@ -83,6 +104,15 @@ const (
 
 	// ,
 	TokenComma
+
+	// <
+	TokenLessThan
+
+	// >
+	TokenGreaterThan
+
+	// ::
+	TokenNamespace
 
 	// Used for error handling
 	TokenInvalid
@@ -101,7 +131,11 @@ type Token struct {
 
 // Turn a Token into a string
 func (tok Token) String() string {
-	return fmt.Sprintf("%s(%s)", tok.Id, tok.Value)
+	if len(tok.Value) > 0 {
+		return fmt.Sprintf(`%s("%s")`, tok.Id, tok.Value)
+	} else {
+		return fmt.Sprintf("%s", tok.Id)
+	}
 }
 
 // A lexer is used to lex a byte stream in IDL format into a series of
@@ -238,9 +272,23 @@ func (lb *lexer) lexStringLiteral() {
 	lb.pushToken(TokenStringLiteral, string(buf))
 }
 
+const (
+	keywordModule    = "module"
+	keywordTypedef   = "typedef"
+	keywordStruct    = "struct"
+	keywordConst     = "const"
+	keywordEnum      = "enum"
+	keywordInterface = "interface"
+	keywordUnion     = "union"
+	keywordSequence  = "sequence"
+	keywordIn        = "in"
+	keywordOut       = "out"
+	keywordInOut     = "inout"
+)
+
 // ### this needs to be improved to read types properly.
 // i.e. handle seqeunce<long, 10>.
-var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_<>[]:,")
+var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_")
 
 func (lb *lexer) lexWord() {
 	buf, err := lb.readUntilNot(validInIdentifiers)
@@ -248,19 +296,32 @@ func (lb *lexer) lexWord() {
 		lb.reportError(fmt.Errorf("EOF on a word?"))
 	}
 
-	// If it ends with a :, then it's not a valid identifier. Most likely
-	// scenario is something like:
-	// struct Foo: Bar -- we'd read "Foo:" as a word, but that is not correct.
-	// If we find it, trim the colon, and stick it in as a separate token.
-	trailingColon := false
-	if buf[len(buf)-1] == ':' && len(buf) > 1 {
-		buf = buf[:len(buf)-1]
-		trailingColon = true
-	}
-	lb.pushToken(TokenWord, string(buf))
-
-	if trailingColon {
-		lb.pushToken(TokenColon, "")
+	// Find out if it is a keyword.
+	switch string(buf) {
+	case keywordModule:
+		fallthrough
+	case keywordTypedef:
+		fallthrough
+	case keywordStruct:
+		fallthrough
+	case keywordConst:
+		fallthrough
+	case keywordEnum:
+		fallthrough
+	case keywordInterface:
+		fallthrough
+	case keywordUnion:
+		fallthrough
+	case keywordSequence:
+		fallthrough
+	case keywordIn:
+		fallthrough
+	case keywordOut:
+		fallthrough
+	case keywordInOut:
+		lb.pushToken(TokenKeyword, string(buf))
+	default:
+		lb.pushToken(TokenIdentifier, string(buf))
 	}
 }
 
@@ -289,12 +350,22 @@ func Lex(d []byte) ([]Token, error) {
 			lb.pushToken(TokenOpenBrace, "")
 		case lb.cur() == '}':
 			lb.pushToken(TokenCloseBrace, "")
+		case lb.cur() == '[':
+			lb.pushToken(TokenOpenSquareBracket, "")
+		case lb.cur() == ']':
+			lb.pushToken(TokenCloseSquareBracket, "")
 		case lb.cur() == '(':
 			lb.pushToken(TokenOpenBracket, "")
 		case lb.cur() == ')':
 			lb.pushToken(TokenCloseBracket, "")
 		case lb.cur() == ':':
-			lb.pushToken(TokenColon, "")
+			lb.advance()
+			if lb.cur() == ':' {
+				lb.pushToken(TokenNamespace, "")
+			} else {
+				lb.rewind()
+				lb.pushToken(TokenColon, "")
+			}
 		case lb.cur() == ';':
 			lb.pushToken(TokenSemicolon, "")
 		case lb.cur() == '=':
@@ -303,6 +374,10 @@ func Lex(d []byte) ([]Token, error) {
 			lb.pushToken(TokenEndLine, "")
 		case lb.cur() == ',':
 			lb.pushToken(TokenComma, "")
+		case lb.cur() == '<':
+			lb.pushToken(TokenLessThan, "")
+		case lb.cur() == '>':
+			lb.pushToken(TokenGreaterThan, "")
 		case strings.IndexByte(string(validInIdentifiers), lb.cur()) >= 0:
 			lb.lexWord()
 		}

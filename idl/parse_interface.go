@@ -7,13 +7,12 @@ import (
 func (pb *parser) parseInterface() {
 	pb.advance()
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected interface name"))
 		return
 	}
 
-	interfaceName := pb.tok().Value
-	pb.advance()
+	interfaceName := pb.parseIdentifier()
 
 	if pb.tok().Id == TokenSemicolon {
 		// interface Foo;
@@ -40,19 +39,18 @@ func (pb *parser) parseInterface() {
 		// interface Foo : Bar {
 		pb.advance()
 
-		inherits := []string{}
-		for pb.tok().Id == TokenWord {
-			if pb.tok().Id != TokenWord {
-				pb.reportError(fmt.Errorf("expected interface inheritance name"))
-				return
-			}
+		if pb.tok().Id != TokenIdentifier {
+			pb.reportError(fmt.Errorf("expected interface inheritance name"))
+			return
+		}
 
-			inheritsName := pb.tok().Value
+		inherits := []string{}
+		for pb.tok().Id == TokenIdentifier {
+			inheritsName := pb.parseIdentifier()
 			inherits = append(inherits, inheritsName)
 			if parseDebug {
 				fmt.Printf("Got interface %s inheriting %s\n", interfaceName, inheritsName)
 			}
-			pb.advance()
 
 			// Multiple inheritance
 			if pb.tok().Id == TokenComma {
@@ -79,25 +77,26 @@ func (pb *parser) parseInterface() {
 }
 
 func (pb *parser) parseInterfaceMember() {
+	fmt.Printf("hi\n")
 	returnType := pb.parseType()
+	fmt.Printf("Got rt %s\n", returnType)
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected interface member name"))
 		return
 	}
 
-	memberName := pb.tok().Value
-	pb.advance()
+	memberName := pb.parseIdentifier()
 
 	if pb.tok().Id != TokenOpenBracket {
 		pb.reportError(fmt.Errorf("expected open bracket"))
 		return
 	}
+	pb.advance()
 
 	if parseDebug {
 		fmt.Printf("Found interface member name %s returning type %s\n", memberName, returnType)
 	}
-	pb.advance()
 
 	m := Method{
 		Name:        memberName,
@@ -116,24 +115,50 @@ func (pb *parser) parseInterfaceMember() {
 		return
 	}
 
-	param := ""
-	for pb.tok().Id == TokenWord || pb.tok().Id == TokenComma {
-		switch pb.tok().Id {
-		case TokenWord:
-			param += pb.tok().Value + " "
-		case TokenComma:
-			if parseDebug {
-				fmt.Printf("Member takes: %s\n", param)
-			}
-			m.Parameters = append(m.Parameters, param)
-			param = ""
+	for {
+		if pb.tok().Id != TokenKeyword {
+			pb.reportError(fmt.Errorf("expected direction"))
+			return
 		}
+
+		switch pb.tok().Value {
+		case keywordIn:
+		case keywordOut:
+		case keywordInOut:
+			break
+		default:
+			pb.reportError(fmt.Errorf("unexpected direction"))
+			return
+		}
+
+		direction := pb.tok().Value
 		pb.advance()
+
+		typeName := pb.parseType()
+
+		paramName := ""
+
+		// Allow: "in foo bar" and "in foo"
+		if pb.tok().Id == TokenIdentifier {
+			paramName = pb.parseIdentifier()
+		}
+
+		full := fmt.Sprintf("%s %s %s", direction, typeName, paramName)
+
+		if parseDebug {
+			fmt.Printf("Member takes: %s\n", full)
+		}
+		m.Parameters = append(m.Parameters, full)
+
+		switch pb.tok().Id {
+		case TokenCloseBracket:
+			goto out
+		case TokenComma:
+			pb.advance()
+			continue
+		}
 	}
 
-	if parseDebug {
-		fmt.Printf("Member takes: %s\n", param)
-	}
-	m.Parameters = append(m.Parameters, param)
+out:
 	pb.currentIface.Methods = append(pb.currentIface.Methods, m)
 }

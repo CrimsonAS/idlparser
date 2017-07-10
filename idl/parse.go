@@ -94,32 +94,130 @@ func (pb *parser) hasError() bool {
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
 func (pb *parser) parseType() string {
-	if pb.tok().Id != TokenWord {
-		pb.reportError(fmt.Errorf("expected constant type"))
+	if pb.tok().Id != TokenIdentifier && (pb.tok().Id != TokenKeyword && pb.tok().Value != keywordSequence) {
+		pb.reportError(fmt.Errorf("expected type name"))
 		return ""
 	}
 
-	constType := pb.tok().Value
+	if pb.tok().Id == TokenKeyword {
+		if pb.tok().Value != keywordSequence {
+			pb.reportError(fmt.Errorf("unexpected keyword"))
+			return ""
+		}
+
+		typeName := keywordSequence
+
+		pb.advance()
+
+		if pb.tok().Id != TokenLessThan {
+			fmt.Errorf("expected: < symbol")
+			return ""
+		}
+
+		pb.advance()
+		typeName += pb.parseType()
+
+		if pb.tok().Id != TokenGreaterThan {
+			fmt.Errorf("expected: > symbol")
+			return ""
+		}
+
+		pb.advance()
+		return typeName
+	}
+
+	typeName := pb.tok().Value
 	pb.advance()
 
-	if constType == "unsigned" {
+	if typeName == "unsigned" {
 		// consume an additional word
-		if pb.tok().Id != TokenWord {
+		if pb.tok().Id != TokenIdentifier {
 			pb.reportError(fmt.Errorf("expected numeric type"))
 			return ""
 		}
 
-		constType += " " + pb.tok().Value
+		typeName += " " + pb.tok().Value
 		pb.advance()
-	} else if constType == "long" {
+	} else if typeName == "long" {
 		// "long long"
-		if pb.tok().Id == TokenWord && pb.tok().Value == "long" {
-			constType += " " + pb.tok().Value
+		if pb.tok().Id == TokenIdentifier && pb.tok().Value == "long" {
+			typeName += " " + pb.tok().Value
 			pb.advance()
 		}
 	}
 
-	return constType
+	if pb.tok().Id == TokenNamespace {
+		// Foo::Bar
+		pb.advance()
+		typeName += "::" + pb.tok().Value
+		pb.advance()
+	}
+
+	return typeName
+}
+
+func (p *parser) parseIdentifier() string {
+	if p.tok().Id != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected identifier"))
+		return ""
+	}
+
+	identifierName := p.tok().Value
+	p.advance()
+
+	if p.tok().Id == TokenNamespace {
+		// Foo::Bar
+		p.advance()
+		if p.tok().Id != TokenIdentifier {
+			p.reportError(fmt.Errorf("expected type name in namespace"))
+			return ""
+		}
+
+		identifierName += "::" + p.tok().Value
+		p.advance()
+	}
+
+	if p.tok().Id == TokenOpenSquareBracket {
+		// value[3]
+		p.advance()
+		identifierName += "["
+
+		if p.tok().Id != TokenIdentifier {
+			p.reportError(fmt.Errorf("expected quantity"))
+			return ""
+		}
+
+		identifierName += p.tok().Value
+		p.advance()
+
+		if p.tok().Id != TokenCloseSquareBracket {
+			p.reportError(fmt.Errorf("expected close bracket"))
+			return ""
+		}
+
+		p.advance()
+	}
+
+	return identifierName
+}
+
+func (p *parser) parseValue() string {
+	if p.tok().Id != TokenIdentifier &&
+		p.tok().Id != TokenLessThan &&
+		p.tok().Id != TokenStringLiteral {
+		p.reportError(fmt.Errorf("expected value"))
+		return ""
+	}
+
+	val := ""
+	for p.tok().Id == TokenIdentifier ||
+		p.tok().Id == TokenLessThan ||
+		p.tok().Id == TokenStringLiteral {
+		val += p.tok().Value
+		p.advance()
+	}
+
+	return val
 }
 
 // Parse a regular word. It might be a keyword (like 'struct' or 'module', or it
@@ -133,19 +231,19 @@ func (pb *parser) parseTokenWord() {
 	case contextModule:
 		// Regular contexts only allow a certain set of keywords.
 		switch word {
-		case "module":
+		case keywordModule:
 			pb.parseModule()
-		case "typedef":
+		case keywordTypedef:
 			pb.parseTypedef()
-		case "struct":
+		case keywordStruct:
 			pb.parseStruct()
-		case "const":
+		case keywordConst:
 			pb.parseConst()
-		case "enum":
+		case keywordEnum:
 			pb.parseEnum()
-		case "interface":
+		case keywordInterface:
 			pb.parseInterface()
-		case "union":
+		case keywordUnion:
 			pb.parseUnion()
 		default:
 			pb.reportError(fmt.Errorf("unexpected keyword in global/module context: %s", word))
@@ -167,6 +265,20 @@ func (pb *parser) parseTokenWord() {
 func (pb *parser) atEnd() bool {
 	// ### right?
 	return pb.ppos >= len(pb.tokens)-1
+}
+
+// Return the next token for parsing
+func (pb *parser) peekTok() Token {
+	if pb.atEnd() || pb.ppos+1 >= len(pb.tokens)-1 {
+		if parseDebug {
+			fmt.Printf("Peeking ahead invalid!\n")
+		}
+		return Token{TokenInvalid, ""}
+	}
+	if parseDebug {
+		fmt.Printf("Peeking ahead ppos %d is %s\n", pb.ppos, pb.tokens[pb.ppos+1])
+	}
+	return pb.tokens[pb.ppos+1]
 }
 
 // Return the current token under parsing
@@ -222,7 +334,9 @@ func Parse(toks []Token) (Module, error) {
 		switch tok.Id {
 		case TokenHash:
 			pb.parseTokenHash()
-		case TokenWord:
+		case TokenKeyword:
+			fallthrough
+		case TokenIdentifier:
 			pb.parseTokenWord()
 		case TokenCloseBrace:
 			pb.popContext()

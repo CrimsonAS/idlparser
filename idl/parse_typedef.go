@@ -9,13 +9,12 @@ func (pb *parser) parseTypedef() {
 
 	fromName := pb.parseType()
 
-	if pb.tok().Id != TokenWord {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected to name"))
 		return
 	}
 
-	toName := pb.tok().Value
-	pb.advance()
+	toName := pb.parseIdentifier()
 
 	if pb.tok().Id != TokenSemicolon {
 		pb.reportError(fmt.Errorf("expected semicolon, got: %s", pb.tok().Id))
