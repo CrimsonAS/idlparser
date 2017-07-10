@@ -20,6 +20,9 @@ type Struct struct {
 	// The name of the struct
 	Name string
 
+	// What struct this struct inherits
+	Inherits []string
+
 	// The members inside this struct
 	Members []Member
 }

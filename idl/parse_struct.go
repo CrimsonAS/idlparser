@@ -17,6 +17,33 @@ func (pb *parser) parseStruct() {
 	structName := pb.tok().Value
 	pb.advance()
 
+	inherits := []string{}
+	switch pb.tok().Id {
+	case TokenOpenBrace:
+		break
+	case TokenColon:
+		pb.advance()
+		if pb.tok().Id != TokenWord {
+			pb.reportError(fmt.Errorf("expected struct inheritance"))
+			return
+		}
+
+		for pb.tok().Id == TokenWord {
+			name := pb.tok().Value
+			inherits = append(inherits, name)
+
+			pb.advance()
+
+			switch pb.tok().Id {
+			case TokenComma:
+				pb.advance()
+				continue
+			case TokenOpenBrace:
+				break
+			}
+		}
+	}
+
 	if pb.tok().Id != TokenOpenBrace {
 		pb.reportError(fmt.Errorf("expected struct contents"))
 		return
@@ -24,6 +51,7 @@ func (pb *parser) parseStruct() {
 
 	pb.advance()
 	pb.pushContext(contextStruct, structName)
+	pb.currentStruct.Inherits = inherits
 }
 
 // Handle data members inside a struct
