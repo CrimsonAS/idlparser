@@ -9,10 +9,13 @@ type Member struct {
 	Type string
 }
 
+// Represents a typedef.
 type TypeDef Member
+
+// Represents a constant.
 type Constant Member
 
-// The contents of a struct{}
+// Represents a struct.
 type Struct struct {
 	// The name of the struct
 	Name string
@@ -21,7 +24,7 @@ type Struct struct {
 	Members []Member
 }
 
-// The contents of an enum{}
+// Represents an enum.
 type Enum struct {
 	// The name of the enum
 	Name string
@@ -43,7 +46,7 @@ type Method struct {
 	Parameters []string
 }
 
-// The contents of an interface {}
+// Represents an interface.
 type Interface struct {
 	// The name of the interface
 	Name string
@@ -55,7 +58,8 @@ type Interface struct {
 	Methods []Method
 }
 
-// The root of all the IDL
+// A module is the base type of the contents of the IDL. It contains everything
+// in the file in an easily accessible form.
 type Module struct {
 	// The name of the module
 	Name string
