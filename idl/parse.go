@@ -198,7 +198,7 @@ func (pb *ParseBuf) advanceAndDontSkipNewLines() {
 }
 
 // Initiate the parsing process
-func (pb *ParseBuf) Parse() {
+func (pb *ParseBuf) Parse() (Module, error) {
 	pb.pushContext(contextGlobal, "")
 
 	for !pb.atEnd() && !pb.hasError() {
@@ -225,13 +225,14 @@ func (pb *ParseBuf) Parse() {
 	}
 
 	pb.popContext()
+	if pb.hasError() {
+		return Module{}, pb.errors[0]
+	}
+
 	if len(pb.contextStack) > 0 {
 		panic("too many contexts")
 	}
-
-	//if parseDebug {
-	fmt.Printf("%+v\n", pb.currentModule)
-	//}
+	return *pb.rootModule, nil
 }
 
 func (pb *ParseBuf) pushContext(ctx contextId, val string) {
