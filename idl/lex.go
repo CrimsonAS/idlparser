@@ -104,27 +104,18 @@ func (tok Token) String() string {
 	return fmt.Sprintf("%s(%s)", tok.Id, tok.Value)
 }
 
-// A Lexer is a Lexer to lex a byte stream in IDL format into a series of
+// A lexer is used to lex a byte stream in IDL format into a series of
 // tokens. The token series can then be interpreted directly, or parsed to
 // ensure validity and become usable in a higher form.
-type Lexer struct {
+type lexer struct {
 	buf    []byte
 	pos    int
 	errors []error
 	tokens []Token
 }
 
-// Create a lexer operating on the given data.
-func NewLexer(d []byte) *Lexer {
-	lb := &Lexer{
-		buf: d,
-		pos: 0,
-	}
-	return lb
-}
-
 // Add the given token to the stream
-func (lb *Lexer) pushToken(tok TokenId, val string) {
+func (lb *lexer) pushToken(tok TokenId, val string) {
 	if lexDebug {
 		if len(val) > 0 {
 			fmt.Printf("Lexed token %s val %s\n", tok, val)
@@ -135,25 +126,25 @@ func (lb *Lexer) pushToken(tok TokenId, val string) {
 	lb.tokens = append(lb.tokens, Token{tok, val})
 }
 
-func (lb *Lexer) reportError(err error) {
+func (lb *lexer) reportError(err error) {
 	lb.errors = append(lb.errors, err)
 }
 
-func (lb *Lexer) hasError() bool {
+func (lb *lexer) hasError() bool {
 	return len(lb.errors) != 0
 }
 
-func (lb *Lexer) cur() byte {
+func (lb *lexer) cur() byte {
 	return lb.buf[lb.pos]
 }
 
-func (lb *Lexer) skipWhitespace() {
+func (lb *lexer) skipWhitespace() {
 	for !lb.atEnd() && (lb.cur() == ' ' || lb.cur() == '\t') {
 		lb.advance()
 	}
 }
 
-func (lb *Lexer) readUntilNot(delims []byte) ([]byte, error) {
+func (lb *lexer) readUntilNot(delims []byte) ([]byte, error) {
 	buf := []byte{}
 	found := true
 	for !lb.atEnd() && found {
@@ -180,7 +171,7 @@ func (lb *Lexer) readUntilNot(delims []byte) ([]byte, error) {
 	return buf, nil
 }
 
-func (lb *Lexer) readUntilMany(delims []byte) ([]byte, error) {
+func (lb *lexer) readUntilMany(delims []byte) ([]byte, error) {
 	buf := []byte{}
 	found := false
 	for !lb.atEnd() && !found {
@@ -204,33 +195,33 @@ func (lb *Lexer) readUntilMany(delims []byte) ([]byte, error) {
 	return buf, nil
 }
 
-func (lb *Lexer) readUntil(delim byte) ([]byte, error) {
+func (lb *lexer) readUntil(delim byte) ([]byte, error) {
 	return lb.readUntilMany([]byte{delim})
 }
 
-func (lb *Lexer) next() byte {
+func (lb *lexer) next() byte {
 	return lb.buf[lb.pos+1]
 }
 
-func (lb *Lexer) atEnd() bool {
+func (lb *lexer) atEnd() bool {
 	return lb.pos >= len(lb.buf)
 }
 
-func (lb *Lexer) advance() {
+func (lb *lexer) advance() {
 	lb.pos += 1
 }
 
-func (lb *Lexer) rewind() {
+func (lb *lexer) rewind() {
 	lb.pos -= 1
 }
 
-func (lb *Lexer) lexComment() {
+func (lb *lexer) lexComment() {
 	if lb.next() == '/' {
 		lb.readUntil('\n')
 	}
 }
 
-func (lb *Lexer) lexStringLiteral() {
+func (lb *lexer) lexStringLiteral() {
 	if lb.cur() != '"' {
 		lb.reportError(fmt.Errorf("expected: \", got: %c", lb.cur()))
 		return
@@ -249,7 +240,7 @@ func (lb *Lexer) lexStringLiteral() {
 
 var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_<>[]:")
 
-func (lb *Lexer) lexWord() {
+func (lb *lexer) lexWord() {
 	buf, err := lb.readUntilNot(validInIdentifiers)
 	if err != nil {
 		lb.reportError(fmt.Errorf("EOF on a word?"))
@@ -259,8 +250,14 @@ func (lb *Lexer) lexWord() {
 
 }
 
-// Run the lex process.
-func (lb *Lexer) Lex() ([]Token, error) {
+// Lex a buffer of IDL data into tokens.
+// Returns the lexed tokens, and any error encountered.
+func Lex(d []byte) ([]Token, error) {
+	lb := &lexer{
+		buf: d,
+		pos: 0,
+	}
+
 	for !lb.atEnd() && !lb.hasError() {
 		lb.skipWhitespace()
 		if lb.atEnd() {

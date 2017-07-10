@@ -49,9 +49,9 @@ const (
 	contextInterface
 )
 
-// A Parser is a parser. It consumes a series of lexed tokens to understand
+// A parser is a parser. It consumes a series of lexed tokens to understand
 // the IDL file.
-type Parser struct {
+type parser struct {
 	tokens       []Token
 	contextStack []context
 	ppos         int
@@ -72,7 +72,7 @@ type Parser struct {
 }
 
 // Report an error during parsing. Further parsing will be aborted.
-func (pb *Parser) reportError(err error) {
+func (pb *parser) reportError(err error) {
 	// Ignore all errors after EOF, as they are likely bogus (due to our
 	// returning a silly token in that case to avoid crashes).
 	if !pb.isEof {
@@ -82,24 +82,13 @@ func (pb *Parser) reportError(err error) {
 }
 
 // Does the parsing have an error already?
-func (pb *Parser) hasError() bool {
+func (pb *parser) hasError() bool {
 	return len(pb.errors) != 0
-}
-
-// Create a Parser from a Lexer's tokens.
-func NewParser(toks []Token) *Parser {
-	pb := &Parser{
-		tokens:        toks,
-		isEof:         false,
-		currentModule: &Module{},
-	}
-	pb.rootModule = pb.currentModule
-	return pb
 }
 
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
-func (pb *Parser) parseType() string {
+func (pb *parser) parseType() string {
 	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("expected constant type"))
 		return ""
@@ -124,7 +113,7 @@ func (pb *Parser) parseType() string {
 
 // Parse a regular word. It might be a keyword (like 'struct' or 'module', or it
 // might be a type name (in struct or interface members).
-func (pb *Parser) parseTokenWord() {
+func (pb *parser) parseTokenWord() {
 	word := pb.tok().Value
 
 	switch pb.currentContext().id {
@@ -161,14 +150,14 @@ func (pb *Parser) parseTokenWord() {
 	}
 }
 
-// Is the Parser at the end of the token stream?
-func (pb *Parser) atEnd() bool {
+// Is the parser at the end of the token stream?
+func (pb *parser) atEnd() bool {
 	// ### right?
 	return pb.ppos >= len(pb.tokens)-1
 }
 
 // Return the current token under parsing
-func (pb *Parser) tok() Token {
+func (pb *parser) tok() Token {
 	if pb.atEnd() {
 		pb.isEof = true
 		pb.reportError(fmt.Errorf("unexpected EOF"))
@@ -178,7 +167,7 @@ func (pb *Parser) tok() Token {
 }
 
 // Advance the parse stream to the next non-newline token.
-func (pb *Parser) advance() {
+func (pb *parser) advance() {
 	for {
 		pb.advanceAndDontSkipNewLines()
 
@@ -190,15 +179,21 @@ func (pb *Parser) advance() {
 }
 
 // Advance the parse stream one position
-func (pb *Parser) advanceAndDontSkipNewLines() {
+func (pb *parser) advanceAndDontSkipNewLines() {
 	if parseDebug {
 		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.tokens[pb.ppos], pb.tokens[pb.ppos+1])
 	}
 	pb.ppos += 1
 }
 
-// Initiate the parsing process
-func (pb *Parser) Parse() (Module, error) {
+// Parse a series of tokens, and return an AST representing the IDL's content.
+func Parse(toks []Token) (Module, error) {
+	pb := &parser{
+		tokens:        toks,
+		isEof:         false,
+		currentModule: &Module{},
+	}
+	pb.rootModule = pb.currentModule
 	pb.pushContext(contextGlobal, "")
 
 	for !pb.atEnd() && !pb.hasError() {
@@ -235,7 +230,7 @@ func (pb *Parser) Parse() (Module, error) {
 	return *pb.rootModule, nil
 }
 
-func (pb *Parser) pushContext(ctx contextId, val string) {
+func (pb *parser) pushContext(ctx contextId, val string) {
 	if parseDebug {
 		fmt.Printf("Opened context: %s (%s)\n", ctx, val)
 	}
@@ -265,7 +260,7 @@ func (pb *Parser) pushContext(ctx contextId, val string) {
 	pb.contextStack = append(pb.contextStack, context{ctx, val})
 }
 
-func (pb *Parser) popContext() {
+func (pb *parser) popContext() {
 	cctx := pb.currentContext()
 
 	switch cctx.id {
@@ -287,6 +282,6 @@ func (pb *Parser) popContext() {
 	pb.contextStack = pb.contextStack[:len(pb.contextStack)-1]
 }
 
-func (pb *Parser) currentContext() context {
+func (pb *parser) currentContext() context {
 	return pb.contextStack[len(pb.contextStack)-1]
 }

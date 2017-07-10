@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (pb *Parser) parseInterface() {
+func (pb *parser) parseInterface() {
 	pb.advance()
 
 	if pb.tok().Id != TokenWord {
@@ -78,7 +78,7 @@ func (pb *Parser) parseInterface() {
 	return
 }
 
-func (pb *Parser) parseInterfaceMember() {
+func (pb *parser) parseInterfaceMember() {
 	returnType := pb.parseType()
 
 	if pb.tok().Id != TokenWord {

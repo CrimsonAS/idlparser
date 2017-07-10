@@ -5,7 +5,7 @@ import (
 )
 
 // The entry point for directives.
-func (pb *Parser) parseTokenHash() {
+func (pb *parser) parseTokenHash() {
 	pb.advance() // skip #
 
 	if pb.tok().Id != TokenWord {
@@ -25,7 +25,7 @@ func (pb *Parser) parseTokenHash() {
 	}
 }
 
-func (pb *Parser) parseDefineDirective() {
+func (pb *parser) parseDefineDirective() {
 	pb.advance()
 
 	if pb.tok().Id != TokenWord {
@@ -49,7 +49,7 @@ func (pb *Parser) parseDefineDirective() {
 	}
 }
 
-func (pb *Parser) parseIncludeDirective() {
+func (pb *parser) parseIncludeDirective() {
 	pb.advance()
 
 	if pb.tok().Id != TokenStringLiteral {

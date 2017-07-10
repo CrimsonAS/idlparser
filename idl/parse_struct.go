@@ -6,7 +6,7 @@ import (
 
 // Handle the opening of a struct
 // struct Foo {
-func (pb *Parser) parseStruct() {
+func (pb *parser) parseStruct() {
 	pb.advance()
 
 	if pb.tok().Id != TokenWord {
@@ -28,7 +28,7 @@ func (pb *Parser) parseStruct() {
 
 // Handle data members inside a struct
 // unsigned long data;
-func (pb *Parser) parseStructMember() {
+func (pb *parser) parseStructMember() {
 	typeName := pb.parseType()
 
 	if pb.tok().Id != TokenWord {

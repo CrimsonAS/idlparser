@@ -27,11 +27,9 @@ func main() {
 
 	b, err := ioutil.ReadFile(*file)
 	checkErr(err, "reading file")
-	lb := idl.NewLexer(b)
-	tokens, err := lb.Lex()
+	tokens, err := idl.Lex(b)
 	checkErr(err, "lexing")
-	pb := idl.NewParser(tokens)
-	module, err := pb.Parse()
+	module, err := idl.Parse(tokens)
 	checkErr(err, "parsing")
 	printModule(module)
 }
