@@ -280,7 +280,6 @@ const (
 	keywordEnum      = "enum"
 	keywordInterface = "interface"
 	keywordUnion     = "union"
-	keywordSequence  = "sequence"
 	keywordIn        = "in"
 	keywordOut       = "out"
 	keywordInOut     = "inout"
@@ -311,8 +310,6 @@ func (lb *lexer) lexWord() {
 	case keywordInterface:
 		fallthrough
 	case keywordUnion:
-		fallthrough
-	case keywordSequence:
 		fallthrough
 	case keywordIn:
 		fallthrough

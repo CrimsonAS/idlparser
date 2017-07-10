@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const parseDebug = false
+const parseDebug = true
 
 // A context id is used to drive the internal state machine. It is not needed
 // outside the parser.
@@ -94,40 +94,31 @@ func (pb *parser) hasError() bool {
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
 func (pb *parser) parseType() string {
-	if pb.tok().Id != TokenIdentifier && (pb.tok().Id != TokenKeyword && pb.tok().Value != keywordSequence) {
+	if pb.tok().Id != TokenIdentifier && (pb.tok().Id != TokenKeyword) {
 		pb.reportError(fmt.Errorf("expected type name"))
 		return ""
 	}
 
-	if pb.tok().Id == TokenKeyword {
-		if pb.tok().Value != keywordSequence {
-			pb.reportError(fmt.Errorf("unexpected keyword"))
-			return ""
-		}
-
-		typeName := keywordSequence
-
-		pb.advance()
-
-		if pb.tok().Id != TokenLessThan {
-			fmt.Errorf("expected: < symbol")
-			return ""
-		}
-
-		pb.advance()
-		typeName += pb.parseType()
-
-		if pb.tok().Id != TokenGreaterThan {
-			fmt.Errorf("expected: > symbol")
-			return ""
-		}
-
-		pb.advance()
-		return typeName
-	}
-
 	typeName := pb.tok().Value
 	pb.advance()
+
+	// sequence<foo>, string<foo>
+	if pb.tok().Id == TokenLessThan {
+		pb.advance()
+		typeName += "<" + pb.parseType()
+
+		for pb.tok().Id == TokenComma {
+			typeName += ", " + pb.parseType()
+		}
+
+		if pb.tok().Id != TokenGreaterThan {
+			fmt.Errorf("expected: >")
+			return ""
+		}
+
+		typeName += ">"
+		pb.advance()
+	}
 
 	if typeName == "unsigned" {
 		// consume an additional word
