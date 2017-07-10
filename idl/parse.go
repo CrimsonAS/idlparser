@@ -52,7 +52,7 @@ const (
 // A ParseBuf is a parser. It consumes a series of lexed tokens to understand
 // the IDL file.
 type ParseBuf struct {
-	lb           *LexBuf
+	tokens       []Token
 	contextStack []context
 	ppos         int
 	errors       []error
@@ -87,9 +87,9 @@ func (pb *ParseBuf) hasError() bool {
 }
 
 // Create a ParseBuf from a LexBuf's tokens.
-func NewParseBuf(lexBuf *LexBuf) *ParseBuf {
+func NewParseBuf(toks []Token) *ParseBuf {
 	pb := &ParseBuf{
-		lb:            lexBuf,
+		tokens:        toks,
 		isEof:         false,
 		currentModule: &Module{},
 	}
@@ -164,7 +164,7 @@ func (pb *ParseBuf) parseTokenWord() {
 // Is the ParseBuf at the end of the token stream?
 func (pb *ParseBuf) atEnd() bool {
 	// ### right?
-	return pb.ppos >= len(pb.lb.tokens)-1
+	return pb.ppos >= len(pb.tokens)-1
 }
 
 // Return the current token under parsing
@@ -174,7 +174,7 @@ func (pb *ParseBuf) tok() Token {
 		pb.reportError(fmt.Errorf("unexpected EOF"))
 		return Token{TokenInvalid, ""}
 	}
-	return pb.lb.tokens[pb.ppos]
+	return pb.tokens[pb.ppos]
 }
 
 // Advance the parse stream to the next non-newline token.
@@ -192,7 +192,7 @@ func (pb *ParseBuf) advance() {
 // Advance the parse stream one position
 func (pb *ParseBuf) advanceAndDontSkipNewLines() {
 	if parseDebug {
-		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.lb.tokens[pb.ppos], pb.lb.tokens[pb.ppos+1])
+		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.tokens[pb.ppos], pb.tokens[pb.ppos+1])
 	}
 	pb.ppos += 1
 }

@@ -19,7 +19,6 @@ It's also missing test coverage.
 * Tests
 * Rename LexBuf to Lexer
 * Rename ParseBuf to Parser
-* Make ParseBuf take `[]Token` rather than a `*LexBuf`
 * Add source information to Token, and use it in parse errors
 
 ... more?

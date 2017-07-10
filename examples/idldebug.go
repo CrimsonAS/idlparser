@@ -28,10 +28,11 @@ func main() {
 	b, err := ioutil.ReadFile(*file)
 	checkErr(err, "reading file")
 	lb := idl.NewLexBuf(b)
-	lb.Lex()
-	pb := idl.NewParseBuf(lb)
+	tokens, err := lb.Lex()
+	checkErr(err, "lexing")
+	pb := idl.NewParseBuf(tokens)
 	module, err := pb.Parse()
-	checkErr(err, "parsing file")
+	checkErr(err, "parsing")
 	printModule(module)
 }
 
