@@ -248,8 +248,20 @@ func (lb *lexer) lexWord() {
 		lb.reportError(fmt.Errorf("EOF on a word?"))
 	}
 
+	// If it ends with a :, then it's not a valid identifier. Most likely
+	// scenario is something like:
+	// struct Foo: Bar -- we'd read "Foo:" as a word, but that is not correct.
+	// If we find it, trim the colon, and stick it in as a separate token.
+	trailingColon := false
+	if buf[len(buf)-1] == ':' && len(buf) > 1 {
+		buf = buf[:len(buf)-1]
+		trailingColon = true
+	}
 	lb.pushToken(TokenWord, string(buf))
 
+	if trailingColon {
+		lb.pushToken(TokenColon, "")
+	}
 }
 
 // Lex a buffer of IDL data into tokens.

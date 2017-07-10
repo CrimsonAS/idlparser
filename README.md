@@ -21,7 +21,5 @@ It's also missing test coverage.
 * Handle types properly, don't just treat them as a dumb sequence of bytes.
   Test cases: long long, unsigned long, unsigned int, sequence<long, 10>,
   sequence<long,10>
-* Handle identifiers properly. Foo::Bar is an identifier, struct Foo: Bar must
-  not be treated as a struct of name "Foo:"
 
 ... more?
