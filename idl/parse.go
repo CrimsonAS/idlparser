@@ -22,6 +22,8 @@ func (ctx contextId) String() string {
 		return "enum"
 	case contextInterface:
 		return "interface"
+	case contextUnion:
+		return "union"
 	}
 
 	return "(wtf)"
@@ -47,10 +49,13 @@ const (
 
 	// In an interface
 	contextInterface
+
+	// In a union
+	contextUnion
 )
 
-// A parser is a parser. It consumes a series of lexed tokens to understand
-// the IDL file.
+// A parser parses IDL into an AST representation. It consumes a series of lexed
+// tokens.
 type parser struct {
 	tokens       []Token
 	contextStack []context
@@ -134,6 +139,8 @@ func (pb *parser) parseTokenWord() {
 			pb.parseEnum()
 		case "interface":
 			pb.parseInterface()
+		case "union":
+			pb.parseUnion()
 		default:
 			pb.reportError(fmt.Errorf("unexpected keyword in global/module context: %s", word))
 			return
@@ -181,7 +188,7 @@ func (pb *parser) advance() {
 // Advance the parse stream one position
 func (pb *parser) advanceAndDontSkipNewLines() {
 	if parseDebug {
-		fmt.Printf("Advancing, ppos was %d, old token %s new token %s\n", pb.ppos, pb.tokens[pb.ppos], pb.tokens[pb.ppos+1])
+		fmt.Printf("Advancing, ppos was %d/%d, old token %s new token %s\n", pb.ppos, len(pb.tokens), pb.tokens[pb.ppos], pb.tokens[pb.ppos+1])
 	}
 	pb.ppos += 1
 }
