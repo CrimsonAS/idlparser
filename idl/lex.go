@@ -50,40 +50,40 @@ const (
 	tokenWord = iota
 
 	// '#'
-	tokenHash = iota
+	tokenHash
 
 	// A quoted string
-	tokenStringLiteral = iota
+	tokenStringLiteral
 
 	// :
-	tokenColon = iota
+	tokenColon
 
 	// ;
-	tokenSemicolon = iota
+	tokenSemicolon
 
 	// {
-	tokenOpenBrace = iota
+	tokenOpenBrace
 
 	// }
-	tokenCloseBrace = iota
+	tokenCloseBrace
 
 	// (
-	tokenOpenBracket = iota
+	tokenOpenBracket
 
 	// )
-	tokenCloseBracket = iota
+	tokenCloseBracket
 
 	// =
-	tokenEquals = iota
+	tokenEquals
 
 	// \n
-	tokenEndLine = iota
+	tokenEndLine
 
 	// ,
-	tokenComma = iota
+	tokenComma
 
 	// Used for error handling
-	tokenInvalid = iota
+	tokenInvalid
 )
 
 type token struct {

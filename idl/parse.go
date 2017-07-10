@@ -37,16 +37,16 @@ const (
 	contextGlobal = iota
 
 	// In a module
-	contextModule = iota
+	contextModule
 
 	// In a struct
-	contextStruct = iota
+	contextStruct
 
 	// In an enum
-	contextEnum = iota
+	contextEnum
 
 	// In an interface
-	contextInterface = iota
+	contextInterface
 )
 
 // A ParseBuf is a parser. It consumes a series of lexed tokens to understand
