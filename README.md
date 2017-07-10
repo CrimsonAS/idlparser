@@ -13,3 +13,12 @@ there that are not covered. Specifically:
 * ... probably more
 
 It's also missing test coverage.
+
+# TODO
+
+* Tests
+* Rename LexBuf to Lexer
+* Rename ParseBuf to Parser
+* Make ParseBuf take `[]Token` rather than a `*LexBuf`
+
+... more?
