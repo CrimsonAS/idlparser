@@ -57,6 +57,18 @@ type ParseBuf struct {
 	ppos         int
 	errors       []error
 	isEof        bool
+
+	// current module being populated
+	currentModule *Module
+
+	// ### these might belong on the AST instead? perhaps not, since they are
+	// only useful during setup...
+	currentEnum   *Enum
+	currentStruct *Struct
+	currentIface  *Interface
+
+	// root module that everything belongs in
+	rootModule *Module
 }
 
 // Report an error during parsing. Further parsing will be aborted.
@@ -77,9 +89,11 @@ func (pb *ParseBuf) hasError() bool {
 // Create a ParseBuf from a LexBuf's tokens.
 func NewParseBuf(lexBuf *LexBuf) *ParseBuf {
 	pb := &ParseBuf{
-		lb:    lexBuf,
-		isEof: false,
+		lb:            lexBuf,
+		isEof:         false,
+		currentModule: &Module{},
 	}
+	pb.rootModule = pb.currentModule
 	return pb
 }
 
@@ -214,16 +228,61 @@ func (pb *ParseBuf) Parse() {
 	if len(pb.contextStack) > 0 {
 		panic("too many contexts")
 	}
+
+	//if parseDebug {
+	fmt.Printf("%+v\n", pb.currentModule)
+	//}
 }
 
 func (pb *ParseBuf) pushContext(ctx contextId, val string) {
-	fmt.Printf("Opened context: %s (%s)\n", ctx, val)
+	if parseDebug {
+		fmt.Printf("Opened context: %s (%s)\n", ctx, val)
+	}
+
+	switch ctx {
+	case contextInterface:
+		e := Interface{Name: val}
+		pb.currentModule.Interfaces = append(pb.currentModule.Interfaces, e)
+		pb.currentIface = &pb.currentModule.Interfaces[len(pb.currentModule.Interfaces)-1]
+	case contextStruct:
+		e := Struct{Name: val}
+		pb.currentModule.Structs = append(pb.currentModule.Structs, e)
+		pb.currentStruct = &pb.currentModule.Structs[len(pb.currentModule.Structs)-1]
+	case contextEnum:
+		e := Enum{Name: val}
+		pb.currentModule.Enums = append(pb.currentModule.Enums, e)
+		pb.currentEnum = &pb.currentModule.Enums[len(pb.currentModule.Enums)-1]
+	case contextModule:
+		m := Module{
+			Name:   val,
+			parent: pb.currentModule,
+		}
+		pb.currentModule.Modules = append(pb.currentModule.Modules, m)
+		pb.currentModule = &pb.currentModule.Modules[len(pb.currentModule.Modules)-1]
+	}
+
 	pb.contextStack = append(pb.contextStack, context{ctx, val})
 }
 
 func (pb *ParseBuf) popContext() {
 	cctx := pb.currentContext()
-	fmt.Printf("Closed context: %s (%s)\n", cctx.id, cctx.value)
+
+	switch cctx.id {
+	case contextInterface:
+		pb.currentIface = nil
+	case contextStruct:
+		pb.currentStruct = nil
+	case contextEnum:
+		pb.currentEnum = nil
+	case contextModule:
+		if pb.currentModule.parent != nil {
+			pb.currentModule = pb.currentModule.parent
+		}
+	}
+
+	if parseDebug {
+		fmt.Printf("Closed context: %s (%s)\n", cctx.id, cctx.value)
+	}
 	pb.contextStack = pb.contextStack[:len(pb.contextStack)-1]
 }
 

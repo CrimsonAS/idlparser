@@ -41,5 +41,11 @@ func (pb *ParseBuf) parseConst() {
 	}
 
 	pb.advance()
-	fmt.Printf("Got constant: %s of type %s with value %s\n", constName, constType, constValue)
+	pb.currentModule.Constants = append(pb.currentModule.Constants, Constant{
+		Name: constName,
+		Type: constType,
+	})
+	if parseDebug {
+		fmt.Printf("Got constant: %s of type %s with value %s\n", constName, constType, constValue)
+	}
 }

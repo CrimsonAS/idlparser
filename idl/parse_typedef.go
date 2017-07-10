@@ -23,5 +23,11 @@ func (pb *ParseBuf) parseTypedef() {
 	}
 
 	pb.advance()
-	fmt.Printf("Typedef: %s to %s\n", fromName, toName)
+	pb.currentModule.TypeDefs = append(pb.currentModule.TypeDefs, TypeDef{
+		Name: toName,
+		Type: fromName,
+	})
+	if parseDebug {
+		fmt.Printf("Typedef: %s to %s\n", fromName, toName)
+	}
 }

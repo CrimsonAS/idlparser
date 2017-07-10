@@ -17,14 +17,20 @@ func (pb *ParseBuf) parseInterface() {
 
 	if pb.tok().id == tokenSemicolon {
 		// interface Foo;
-		fmt.Printf("Read empty interface %s\n", interfaceName)
+		if parseDebug {
+			fmt.Printf("Read empty interface %s\n", interfaceName)
+		}
 		pb.advance()
+		pb.pushContext(contextInterface, interfaceName)
+		pb.popContext() // immediate pop as it's empty, just register in the AST
 		return
 	}
 
 	if pb.tok().id == tokenOpenBrace {
 		// interface Foo {
-		fmt.Printf("Read non-inheriting interface %s\n", interfaceName)
+		if parseDebug {
+			fmt.Printf("Read non-inheriting interface %s\n", interfaceName)
+		}
 		pb.advance()
 		pb.pushContext(contextInterface, interfaceName)
 		return
@@ -34,18 +40,18 @@ func (pb *ParseBuf) parseInterface() {
 		// interface Foo : Bar {
 		pb.advance()
 
-		for pb.tok().id == tokenWord || pb.tok().id == tokenEndLine {
-			// This feels a bit nasty...
-			for pb.tok().id == tokenEndLine {
-				pb.advance()
-			}
+		inherits := []string{}
+		for pb.tok().id == tokenWord {
 			if pb.tok().id != tokenWord {
 				pb.reportError(fmt.Errorf("expected interface inheritance name"))
 				return
 			}
 
 			inheritsName := pb.tok().value
-			fmt.Printf("Got interface %s inheriting %s\n", interfaceName, inheritsName)
+			inherits = append(inherits, inheritsName)
+			if parseDebug {
+				fmt.Printf("Got interface %s inheriting %s\n", interfaceName, inheritsName)
+			}
 			pb.advance()
 
 			// Multiple inheritance
@@ -64,6 +70,7 @@ func (pb *ParseBuf) parseInterface() {
 
 		pb.advance()
 		pb.pushContext(contextInterface, interfaceName)
+		pb.currentIface.Inherits = inherits
 		return
 	}
 
@@ -87,8 +94,15 @@ func (pb *ParseBuf) parseInterfaceMember() {
 		return
 	}
 
-	fmt.Printf("Found interface member name %s returning type %s\n", memberName, returnType)
+	if parseDebug {
+		fmt.Printf("Found interface member name %s returning type %s\n", memberName, returnType)
+	}
 	pb.advance()
+
+	m := Method{
+		Name:        memberName,
+		ReturnValue: returnType,
+	}
 
 	if pb.tok().id == tokenCloseBracket {
 		// void foo();
@@ -98,21 +112,28 @@ func (pb *ParseBuf) parseInterfaceMember() {
 			return
 		}
 		pb.advance()
+		pb.currentIface.Methods = append(pb.currentIface.Methods, m)
 		return
 	}
 
 	param := ""
-	for pb.tok().id == tokenWord || pb.tok().id == tokenComma || pb.tok().id == tokenEndLine {
+	for pb.tok().id == tokenWord || pb.tok().id == tokenComma {
 		switch pb.tok().id {
-		case tokenEndLine:
-			// do nothing
 		case tokenWord:
 			param += pb.tok().value + " "
 		case tokenComma:
-			fmt.Printf("Member takes: %s\n", param)
+			if parseDebug {
+				fmt.Printf("Member takes: %s\n", param)
+			}
+			m.Parameters = append(m.Parameters, param)
 			param = ""
 		}
 		pb.advance()
 	}
-	fmt.Printf("Member takes: %s\n", param)
+
+	if parseDebug {
+		fmt.Printf("Member takes: %s\n", param)
+	}
+	m.Parameters = append(m.Parameters, param)
+	pb.currentIface.Methods = append(pb.currentIface.Methods, m)
 }

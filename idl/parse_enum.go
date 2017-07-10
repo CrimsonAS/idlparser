@@ -36,7 +36,7 @@ func (pb *ParseBuf) parseEnumMember() {
 		return
 	}
 
-	enumValue := pb.tok().value
+	enumName := pb.tok().value
 	pb.advance()
 
 	for pb.tok().id == tokenComma {
@@ -44,5 +44,11 @@ func (pb *ParseBuf) parseEnumMember() {
 		pb.advance()
 	}
 
-	fmt.Printf("Read enum member: %s\n", enumValue)
+	if parseDebug {
+		fmt.Printf("Read enum member: %s\n", enumName)
+	}
+	pb.currentEnum.Members = append(pb.currentEnum.Members, Member{
+		Name: enumName,
+		// ### assign value?
+	})
 }

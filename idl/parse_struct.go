@@ -45,5 +45,13 @@ func (pb *ParseBuf) parseStructMember() {
 	}
 
 	pb.advance()
-	fmt.Printf("Read struct member: %s of type %s\n", memberName, typeName)
+
+	if parseDebug {
+		fmt.Printf("Read struct member: %s of type %s\n", memberName, typeName)
+	}
+
+	pb.currentStruct.Members = append(pb.currentStruct.Members, Member{
+		Name: memberName,
+		Type: typeName,
+	})
 }
