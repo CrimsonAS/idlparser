@@ -238,7 +238,9 @@ func (lb *lexer) lexStringLiteral() {
 	lb.pushToken(TokenStringLiteral, string(buf))
 }
 
-var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_<>[]:")
+// ### this needs to be improved to read types properly.
+// i.e. handle seqeunce<long, 10>.
+var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_<>[]:,")
 
 func (lb *lexer) lexWord() {
 	buf, err := lb.readUntilNot(validInIdentifiers)
