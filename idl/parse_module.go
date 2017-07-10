@@ -7,15 +7,15 @@ import (
 func (pb *ParseBuf) parseModule() {
 	pb.advance()
 
-	if pb.tok().id != tokenWord {
+	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("expected module name"))
 		return
 	}
 
-	moduleName := pb.tok().value
+	moduleName := pb.tok().Value
 	pb.advance()
 
-	if pb.tok().id != tokenOpenBrace {
+	if pb.tok().Id != TokenOpenBrace {
 		pb.reportError(fmt.Errorf("expected module contents"))
 		return
 	}

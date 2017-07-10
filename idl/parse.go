@@ -100,22 +100,22 @@ func NewParseBuf(lexBuf *LexBuf) *ParseBuf {
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
 func (pb *ParseBuf) parseType() string {
-	if pb.tok().id != tokenWord {
+	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("expected constant type"))
 		return ""
 	}
 
-	constType := pb.tok().value
+	constType := pb.tok().Value
 	pb.advance()
 
 	if constType == "unsigned" {
 		// consume an additional word
-		if pb.tok().id != tokenWord {
+		if pb.tok().Id != TokenWord {
 			pb.reportError(fmt.Errorf("expected numeric type"))
 			return ""
 		}
 
-		constType += " " + pb.tok().value
+		constType += " " + pb.tok().Value
 		pb.advance()
 	}
 
@@ -125,7 +125,7 @@ func (pb *ParseBuf) parseType() string {
 // Parse a regular word. It might be a keyword (like 'struct' or 'module', or it
 // might be a type name (in struct or interface members).
 func (pb *ParseBuf) parseTokenWord() {
-	word := pb.tok().value
+	word := pb.tok().Value
 
 	switch pb.currentContext().id {
 	case contextGlobal:
@@ -168,11 +168,11 @@ func (pb *ParseBuf) atEnd() bool {
 }
 
 // Return the current token under parsing
-func (pb *ParseBuf) tok() token {
+func (pb *ParseBuf) tok() Token {
 	if pb.atEnd() {
 		pb.isEof = true
 		pb.reportError(fmt.Errorf("unexpected EOF"))
-		return token{tokenInvalid, ""}
+		return Token{TokenInvalid, ""}
 	}
 	return pb.lb.tokens[pb.ppos]
 }
@@ -183,7 +183,7 @@ func (pb *ParseBuf) advance() {
 		pb.advanceAndDontSkipNewLines()
 
 		// Skip all whitespace tokens.
-		if pb.tok().id != tokenEndLine {
+		if pb.tok().Id != TokenEndLine {
 			break
 		}
 	}
@@ -204,19 +204,19 @@ func (pb *ParseBuf) Parse() (Module, error) {
 	for !pb.atEnd() && !pb.hasError() {
 		tok := pb.tok()
 		if parseDebug {
-			if len(tok.value) > 0 {
-				fmt.Printf("ppos %d Parsing token %s val %s\n", pb.ppos, tok.id, tok.value)
+			if len(tok.Value) > 0 {
+				fmt.Printf("ppos %d Parsing token %s val %s\n", pb.ppos, tok.Id, tok.Value)
 			} else {
-				fmt.Printf("ppos %d Parsing token %s\n", pb.ppos, tok.id)
+				fmt.Printf("ppos %d Parsing token %s\n", pb.ppos, tok.Id)
 			}
 		}
 
-		switch tok.id {
-		case tokenHash:
+		switch tok.Id {
+		case TokenHash:
 			pb.parseTokenHash()
-		case tokenWord:
+		case TokenWord:
 			pb.parseTokenWord()
-		case tokenCloseBrace:
+		case TokenCloseBrace:
 			pb.popContext()
 			pb.advance()
 		default:

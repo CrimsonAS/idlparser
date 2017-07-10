@@ -8,12 +8,12 @@ import (
 func (pb *ParseBuf) parseTokenHash() {
 	pb.advance() // skip #
 
-	if pb.tok().id != tokenWord {
+	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("unexpected non-word"))
 		return
 	}
 
-	directive := pb.tok().value
+	directive := pb.tok().Value
 
 	switch directive {
 	case "define":
@@ -28,16 +28,16 @@ func (pb *ParseBuf) parseTokenHash() {
 func (pb *ParseBuf) parseDefineDirective() {
 	pb.advance()
 
-	if pb.tok().id != tokenWord {
+	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("unexpected non-word"))
 		return
 	}
 
-	varName := pb.tok().value
+	varName := pb.tok().Value
 	pb.advanceAndDontSkipNewLines()
 
-	if !pb.atEnd() && pb.tok().id == tokenWord {
-		varValue := pb.tok().value
+	if !pb.atEnd() && pb.tok().Id == TokenWord {
+		varValue := pb.tok().Value
 		// Don't skip newlines so that:
 		// #define FOO
 		// Something
@@ -52,12 +52,12 @@ func (pb *ParseBuf) parseDefineDirective() {
 func (pb *ParseBuf) parseIncludeDirective() {
 	pb.advance()
 
-	if pb.tok().id != tokenStringLiteral {
+	if pb.tok().Id != TokenStringLiteral {
 		pb.reportError(fmt.Errorf("unexpected non-string-literal"))
 		return
 	}
 
-	fileName := pb.tok().value
+	fileName := pb.tok().Value
 	pb.advance()
 
 	fmt.Printf("Included: %s\n", fileName)

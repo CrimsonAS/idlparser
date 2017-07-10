@@ -7,36 +7,38 @@ import (
 
 const lexDebug = false
 
-type tokenId int
+// A TokenId represents a type of token in an IDL file.
+type TokenId int
 
-func (tok tokenId) String() string {
+// Turn a TokenId into a string.
+func (tok TokenId) String() string {
 	val := ""
 	switch tok {
-	case tokenWord:
+	case TokenWord:
 		val = "word"
-	case tokenHash:
+	case TokenHash:
 		val = "#"
-	case tokenStringLiteral:
+	case TokenStringLiteral:
 		val = "quoted string"
-	case tokenColon:
+	case TokenColon:
 		val = ":"
-	case tokenSemicolon:
+	case TokenSemicolon:
 		val = ";"
-	case tokenOpenBrace:
+	case TokenOpenBrace:
 		val = "{"
-	case tokenCloseBrace:
+	case TokenCloseBrace:
 		val = "}"
-	case tokenOpenBracket:
+	case TokenOpenBracket:
 		val = "("
-	case tokenCloseBracket:
+	case TokenCloseBracket:
 		val = ")"
-	case tokenEquals:
+	case TokenEquals:
 		val = "="
-	case tokenEndLine:
+	case TokenEndLine:
 		val = "\\n"
-	case tokenComma:
+	case TokenComma:
 		val = ","
-	case tokenInvalid:
+	case TokenInvalid:
 		val = "(invalid)"
 	default:
 		val = "(wtf)"
@@ -47,61 +49,72 @@ func (tok tokenId) String() string {
 
 const (
 	// Any bare word, could be a keyword like module or a struct name.
-	tokenWord = iota
+	TokenWord = iota
 
 	// '#'
-	tokenHash
+	TokenHash
 
 	// A quoted string
-	tokenStringLiteral
+	TokenStringLiteral
 
 	// :
-	tokenColon
+	TokenColon
 
 	// ;
-	tokenSemicolon
+	TokenSemicolon
 
 	// {
-	tokenOpenBrace
+	TokenOpenBrace
 
 	// }
-	tokenCloseBrace
+	TokenCloseBrace
 
 	// (
-	tokenOpenBracket
+	TokenOpenBracket
 
 	// )
-	tokenCloseBracket
+	TokenCloseBracket
 
 	// =
-	tokenEquals
+	TokenEquals
 
 	// \n
-	tokenEndLine
+	TokenEndLine
 
 	// ,
-	tokenComma
+	TokenComma
 
 	// Used for error handling
-	tokenInvalid
+	TokenInvalid
 )
 
-type token struct {
-	id    tokenId
-	value string
+// A Token represents an individal piece of an IDL file.
+type Token struct {
+	// ### these should be public
+	// Represents the type of token, e.g. TokenWord
+	Id TokenId
+
+	// Represents the associated data of a token. For instance, TokenWord will
+	// have a value containing the word that was lexed.
+	Value string
 }
 
-func (tok token) String() string {
-	return fmt.Sprintf("%s(%s)", tok.id, tok.value)
+// Turn a Token into a string
+func (tok Token) String() string {
+	return fmt.Sprintf("%s(%s)", tok.Id, tok.Value)
 }
 
+// A LexBuf is a Lexer to lex a byte stream in IDL format into a series of
+// tokens. The token series can then be interpreted directly, or parsed to
+// ensure validity and become usable in a higher form.
 type LexBuf struct {
 	buf    []byte
 	pos    int
 	errors []error
-	tokens []token
+	tokens []Token
 }
 
+// Create a lexer operating on the given data.
 func NewLexBuf(d []byte) *LexBuf {
 	lb := &LexBuf{
 		buf: d,
@@ -110,7 +123,8 @@ func NewLexBuf(d []byte) *LexBuf {
 	return lb
 }
 
-func (lb *LexBuf) pushToken(tok tokenId, val string) {
+// Add the given token to the stream
+func (lb *LexBuf) pushToken(tok TokenId, val string) {
 	if lexDebug {
 		if len(val) > 0 {
 			fmt.Printf("Lexed token %s val %s\n", tok, val)
@@ -118,7 +132,7 @@ func (lb *LexBuf) pushToken(tok tokenId, val string) {
 			fmt.Printf("Lexed token %s\n", tok)
 		}
 	}
-	lb.tokens = append(lb.tokens, token{tok, val})
+	lb.tokens = append(lb.tokens, Token{tok, val})
 }
 
 func (lb *LexBuf) reportError(err error) {
@@ -230,7 +244,7 @@ func (lb *LexBuf) lexStringLiteral() {
 		lb.reportError(fmt.Errorf("unterminated string literal"))
 	}
 
-	lb.pushToken(tokenStringLiteral, string(buf))
+	lb.pushToken(TokenStringLiteral, string(buf))
 }
 
 var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_<>[]:")
@@ -241,11 +255,12 @@ func (lb *LexBuf) lexWord() {
 		lb.reportError(fmt.Errorf("EOF on a word?"))
 	}
 
-	lb.pushToken(tokenWord, string(buf))
+	lb.pushToken(TokenWord, string(buf))
 
 }
 
-func (lb *LexBuf) Lex() error {
+// Run the lex process.
+func (lb *LexBuf) Lex() ([]Token, error) {
 	for !lb.atEnd() && !lb.hasError() {
 		lb.skipWhitespace()
 		if lb.atEnd() {
@@ -256,27 +271,27 @@ func (lb *LexBuf) Lex() error {
 		case lb.cur() == '/':
 			lb.lexComment()
 		case lb.cur() == '#':
-			lb.pushToken(tokenHash, "")
+			lb.pushToken(TokenHash, "")
 		case lb.cur() == '"':
 			lb.lexStringLiteral()
 		case lb.cur() == '{':
-			lb.pushToken(tokenOpenBrace, "")
+			lb.pushToken(TokenOpenBrace, "")
 		case lb.cur() == '}':
-			lb.pushToken(tokenCloseBrace, "")
+			lb.pushToken(TokenCloseBrace, "")
 		case lb.cur() == '(':
-			lb.pushToken(tokenOpenBracket, "")
+			lb.pushToken(TokenOpenBracket, "")
 		case lb.cur() == ')':
-			lb.pushToken(tokenCloseBracket, "")
+			lb.pushToken(TokenCloseBracket, "")
 		case lb.cur() == ':':
-			lb.pushToken(tokenColon, "")
+			lb.pushToken(TokenColon, "")
 		case lb.cur() == ';':
-			lb.pushToken(tokenSemicolon, "")
+			lb.pushToken(TokenSemicolon, "")
 		case lb.cur() == '=':
-			lb.pushToken(tokenEquals, "")
+			lb.pushToken(TokenEquals, "")
 		case lb.cur() == '\n':
-			lb.pushToken(tokenEndLine, "")
+			lb.pushToken(TokenEndLine, "")
 		case lb.cur() == ',':
-			lb.pushToken(tokenComma, "")
+			lb.pushToken(TokenComma, "")
 		case strings.IndexByte(string(validInIdentifiers), lb.cur()) >= 0:
 			lb.lexWord()
 		}
@@ -285,8 +300,8 @@ func (lb *LexBuf) Lex() error {
 	}
 
 	if lb.hasError() {
-		return lb.errors[0]
+		return []Token{}, lb.errors[0]
 	}
 
-	return nil
+	return lb.tokens, nil
 }

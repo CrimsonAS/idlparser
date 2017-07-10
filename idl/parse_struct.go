@@ -9,15 +9,15 @@ import (
 func (pb *ParseBuf) parseStruct() {
 	pb.advance()
 
-	if pb.tok().id != tokenWord {
+	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("expected struct name"))
 		return
 	}
 
-	structName := pb.tok().value
+	structName := pb.tok().Value
 	pb.advance()
 
-	if pb.tok().id != tokenOpenBrace {
+	if pb.tok().Id != TokenOpenBrace {
 		pb.reportError(fmt.Errorf("expected struct contents"))
 		return
 	}
@@ -31,15 +31,15 @@ func (pb *ParseBuf) parseStruct() {
 func (pb *ParseBuf) parseStructMember() {
 	typeName := pb.parseType()
 
-	if pb.tok().id != tokenWord {
+	if pb.tok().Id != TokenWord {
 		pb.reportError(fmt.Errorf("expected member name"))
 		return
 	}
 
-	memberName := pb.tok().value
+	memberName := pb.tok().Value
 	pb.advance()
 
-	if pb.tok().id != tokenSemicolon {
+	if pb.tok().Id != TokenSemicolon {
 		pb.reportError(fmt.Errorf("expected semicolon"))
 		return
 	}
