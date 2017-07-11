@@ -13,7 +13,13 @@ type Member struct {
 type TypeDef Member
 
 // Constant represents a constant in the AST
-type Constant Member
+type Constant struct {
+	// The meta-information about the constant
+	Member
+
+	// The value of the constant
+	Value string
+}
 
 // Struct represents a struct in the AST
 type Struct struct {

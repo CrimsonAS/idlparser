@@ -37,8 +37,11 @@ func (p *parser) parseConst() {
 
 	p.advance()
 	p.currentModule.Constants = append(p.currentModule.Constants, Constant{
-		Name: constName,
-		Type: constType,
+		Member: Member{
+			Name: constName,
+			Type: constType,
+		},
+		Value: constValue,
 	})
 	if parseDebug {
 		fmt.Printf("Got constant: %s of type %s with value %s\n", constName, constType, constValue)
