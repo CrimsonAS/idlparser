@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const parseDebug = true
+const parseDebug = false
 
 // A context id is used to drive the internal state machine. It is not needed
 // outside the parser.
