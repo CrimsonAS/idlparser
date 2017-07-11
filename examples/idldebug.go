@@ -50,7 +50,7 @@ func printModule(m idl.Module) {
 	for _, t := range m.Interfaces {
 		fmt.Printf("%s\t\t%s (: %s)\n", tabs, t.Name, strings.Join(t.Inherits, ", "))
 		for _, t2 := range t.Methods {
-			fmt.Printf("%s\t\t\t%s %s(%s)\n", tabs, t2.ReturnValue, t2.Name, strings.Join(t2.Parameters, ", "))
+			fmt.Printf("%s\t\t\t%s %s(%s)\n", tabs, t2.ReturnValue, t2.Name, t2.Parameters)
 		}
 	}
 	fmt.Printf("%s\t%s Constants:\n", tabs, m.Name)

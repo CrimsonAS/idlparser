@@ -141,12 +141,17 @@ func (p *parser) parseInterfaceMember() {
 			paramName = p.parseIdentifier()
 		}
 
-		full := fmt.Sprintf("%s %s %s", direction, typeName, paramName)
+		fullName := fmt.Sprintf("%s %s", typeName, paramName)
 
 		if parseDebug {
-			fmt.Printf("Member takes: %s\n", full)
+			fmt.Printf("Member takes: %s %s\n", direction, fullName)
 		}
-		m.Parameters = append(m.Parameters, full)
+		m.Parameters = append(m.Parameters, MethodParameter{
+			Type: Type{
+				Name: fullName,
+			},
+			Direction: direction,
+		})
 
 		switch p.tok().ID {
 		case TokenCloseBracket:

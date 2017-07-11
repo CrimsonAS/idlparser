@@ -1,12 +1,38 @@
 package idl
 
+import (
+	"fmt"
+	"strings"
+)
+
+// Type provides a parsed representation of an IDL type.
+type Type struct {
+	// The name of the type, e.g. "boolean", or "sequence" in "sequence<string>"
+	Name string
+
+	// Any parameters of the type if the type is a templated one (e.g. "string"
+	// in "sequence<string>")
+	TemplateParameters []Type
+}
+
+func (t Type) String() string {
+	tparams := []string{}
+	for _, tp := range t.TemplateParameters {
+		tparams = append(tparams, tp.Name)
+	}
+	if len(tparams) > 0 {
+		return fmt.Sprintf("%s<%s>", t.Name, strings.Join(tparams, ", "))
+	}
+	return fmt.Sprintf("%s", t.Name)
+}
+
 // Member provides a generic representation of a member in the AST
 type Member struct {
 	// The name of the member
 	Name string
 
 	// The type of the member (e.g. "unsigned long")
-	Type string
+	Type Type
 }
 
 // TypeDef represents a typedef in the AST
@@ -42,6 +68,19 @@ type Enum struct {
 	Members []Member
 }
 
+// MethodParameter is a specialization of Type to provide the direction of the
+// type.
+type MethodParameter struct {
+	Type
+
+	// in, out, inout
+	Direction string
+}
+
+func (t MethodParameter) String() string {
+	return fmt.Sprintf("%s %s", t.Direction, t.Type)
+}
+
 // Method represents the contents of a method in an Interface in the AST
 // For instance, "void foo(inout int foo)"
 type Method struct {
@@ -49,10 +88,10 @@ type Method struct {
 	Name string
 
 	// The return value of the method (e.g. void)
-	ReturnValue string
+	ReturnValue Type
 
 	// The parameters of the method (e.g. "inout int foo")
-	Parameters []string
+	Parameters []MethodParameter
 }
 
 // Interface represents an interface in the AST

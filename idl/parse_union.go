@@ -31,7 +31,7 @@ func (p *parser) parseUnion() {
 
 	switchType := p.parseType()
 
-	if switchType == "" {
+	if p.hasError() {
 		p.reportError(fmt.Errorf("expected switch on type in union"))
 		return
 	}
@@ -74,7 +74,7 @@ func (p *parser) parseUnionMember() {
 
 	switchType := p.parseType()
 
-	if switchType == "" {
+	if p.hasError() {
 		p.reportError(fmt.Errorf("expected type in union member"))
 		return
 	}

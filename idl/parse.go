@@ -93,47 +93,49 @@ func (p *parser) hasError() bool {
 
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
-func (p *parser) parseType() string {
+func (p *parser) parseType() Type {
+	t := Type{}
+
 	if p.tok().ID != TokenIdentifier {
 		p.reportError(fmt.Errorf("expected type name"))
-		return ""
+		return t
 	}
 
-	typeName := p.tok().Value
+	t.Name = p.tok().Value
 	p.advance()
 
 	// sequence<foo>, string<foo>
+	// ### this should come after the namespace check
 	if p.tok().ID == TokenLessThan {
 		p.advance()
-		typeName += "<" + p.parseType()
+		t.TemplateParameters = append(t.TemplateParameters, p.parseType())
 
 		for p.tok().ID == TokenComma {
 			p.advance()
-			typeName += ", " + p.parseType()
+			t.TemplateParameters = append(t.TemplateParameters, p.parseType())
 		}
 
 		if p.tok().ID != TokenGreaterThan {
 			fmt.Errorf("expected: >")
-			return ""
+			return t
 		}
 
-		typeName += ">"
 		p.advance()
 	}
 
-	if typeName == "unsigned" {
+	if t.Name == "unsigned" {
 		// consume an additional word
 		if p.tok().ID != TokenIdentifier {
 			p.reportError(fmt.Errorf("expected numeric type"))
-			return ""
+			return t
 		}
 
-		typeName += " " + p.tok().Value
+		t.Name += " " + p.tok().Value
 		p.advance()
-	} else if typeName == "long" {
+	} else if t.Name == "long" {
 		// "long long"
 		if p.tok().ID == TokenIdentifier && p.tok().Value == "long" {
-			typeName += " " + p.tok().Value
+			t.Name += " " + p.tok().Value
 			p.advance()
 		}
 	}
@@ -141,11 +143,11 @@ func (p *parser) parseType() string {
 	if p.tok().ID == TokenNamespace {
 		// Foo::Bar
 		p.advance()
-		typeName += "::" + p.tok().Value
+		t.Name += "::" + p.tok().Value
 		p.advance()
 	}
 
-	return typeName
+	return t
 }
 
 func (p *parser) parseIdentifier() string {
