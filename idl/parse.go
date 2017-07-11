@@ -204,11 +204,21 @@ func (p *parser) parseValue() string {
 	}
 
 	val := ""
+	isString := false
+	if p.tok().ID == TokenStringLiteral {
+		isString = true
+		val = "\""
+	}
+
 	for p.tok().ID == TokenIdentifier ||
 		p.tok().ID == TokenLessThan ||
 		p.tok().ID == TokenStringLiteral {
 		val += p.tok().Value
 		p.advance()
+	}
+
+	if isString {
+		val += "\""
 	}
 
 	return val
