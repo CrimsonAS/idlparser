@@ -190,6 +190,7 @@ func (p *parser) parseIdentifier() string {
 		}
 
 		p.advance()
+		identifierName += "]"
 	}
 
 	return identifierName
