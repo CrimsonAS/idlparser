@@ -5,60 +5,60 @@ import (
 )
 
 // The entry point for directives.
-func (pb *parser) parseTokenHash() {
-	pb.advance() // skip #
+func (p *parser) parseTokenHash() {
+	p.advance() // skip #
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("unexpected non-word"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("unexpected non-word"))
 		return
 	}
 
-	directive := pb.tok().Value
+	directive := p.tok().Value
 
 	switch directive {
 	case "define":
-		pb.parseDefineDirective()
+		p.parseDefineDirective()
 	case "include":
-		pb.parseIncludeDirective()
+		p.parseIncludeDirective()
 	default:
-		pb.reportError(fmt.Errorf("unexpected directive: %s", directive))
+		p.reportError(fmt.Errorf("unexpected directive: %s", directive))
 	}
 }
 
-func (pb *parser) parseDefineDirective() {
-	pb.advance()
+func (p *parser) parseDefineDirective() {
+	p.advance()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("unexpected non-word"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("unexpected non-word"))
 		return
 	}
 
-	varName := pb.tok().Value
-	pb.advanceAndDontSkipNewLines()
+	varName := p.tok().Value
+	p.advanceAndDontSkipNewLines()
 
-	if !pb.atEnd() && pb.tok().ID == TokenIdentifier {
-		varValue := pb.tok().Value
+	if !p.atEnd() && p.tok().ID == TokenIdentifier {
+		varValue := p.tok().Value
 		// Don't skip newlines so that:
 		// #define FOO
 		// Something
 		// isn't treated as "#define FOO Something".
-		pb.advanceAndDontSkipNewLines()
+		p.advanceAndDontSkipNewLines()
 		fmt.Printf("Define: %s val %s\n", varName, varValue)
 	} else {
 		fmt.Printf("Define: %s no value\n", varName)
 	}
 }
 
-func (pb *parser) parseIncludeDirective() {
-	pb.advance()
+func (p *parser) parseIncludeDirective() {
+	p.advance()
 
-	if pb.tok().ID != TokenStringLiteral {
-		pb.reportError(fmt.Errorf("unexpected non-string-literal"))
+	if p.tok().ID != TokenStringLiteral {
+		p.reportError(fmt.Errorf("unexpected non-string-literal"))
 		return
 	}
 
-	fileName := pb.tok().Value
-	pb.advance()
+	fileName := p.tok().Value
+	p.advance()
 
 	fmt.Printf("Included: %s\n", fileName)
 }

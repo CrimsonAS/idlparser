@@ -4,39 +4,39 @@ import (
 	"fmt"
 )
 
-func (pb *parser) parseConst() {
-	pb.advance()
+func (p *parser) parseConst() {
+	p.advance()
 
-	constType := pb.parseType()
+	constType := p.parseType()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected constant name"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected constant name"))
 		return
 	}
 
-	constName := pb.parseIdentifier()
+	constName := p.parseIdentifier()
 
-	if pb.tok().ID != TokenEquals {
-		pb.reportError(fmt.Errorf("expected equals"))
+	if p.tok().ID != TokenEquals {
+		p.reportError(fmt.Errorf("expected equals"))
 		return
 	}
 
-	pb.advance()
+	p.advance()
 
-	if pb.tok().ID != TokenIdentifier && pb.tok().ID != TokenStringLiteral {
-		pb.reportError(fmt.Errorf("expected constant value"))
+	if p.tok().ID != TokenIdentifier && p.tok().ID != TokenStringLiteral {
+		p.reportError(fmt.Errorf("expected constant value"))
 		return
 	}
 
-	constValue := pb.parseValue()
+	constValue := p.parseValue()
 
-	if pb.tok().ID != TokenSemicolon {
-		pb.reportError(fmt.Errorf("expected semicolon"))
+	if p.tok().ID != TokenSemicolon {
+		p.reportError(fmt.Errorf("expected semicolon"))
 		return
 	}
 
-	pb.advance()
-	pb.currentModule.Constants = append(pb.currentModule.Constants, Constant{
+	p.advance()
+	p.currentModule.Constants = append(p.currentModule.Constants, Constant{
 		Name: constName,
 		Type: constType,
 	})

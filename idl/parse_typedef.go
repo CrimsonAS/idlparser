@@ -4,25 +4,25 @@ import (
 	"fmt"
 )
 
-func (pb *parser) parseTypedef() {
-	pb.advance()
+func (p *parser) parseTypedef() {
+	p.advance()
 
-	fromName := pb.parseType()
+	fromName := p.parseType()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected to name"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected to name"))
 		return
 	}
 
-	toName := pb.parseIdentifier()
+	toName := p.parseIdentifier()
 
-	if pb.tok().ID != TokenSemicolon {
-		pb.reportError(fmt.Errorf("expected semicolon, got: %s", pb.tok().ID))
+	if p.tok().ID != TokenSemicolon {
+		p.reportError(fmt.Errorf("expected semicolon, got: %s", p.tok().ID))
 		return
 	}
 
-	pb.advance()
-	pb.currentModule.TypeDefs = append(pb.currentModule.TypeDefs, TypeDef{
+	p.advance()
+	p.currentModule.TypeDefs = append(p.currentModule.TypeDefs, TypeDef{
 		Name: toName,
 		Type: fromName,
 	})

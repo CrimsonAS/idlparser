@@ -4,21 +4,21 @@ import (
 	"fmt"
 )
 
-func (pb *parser) parseModule() {
-	pb.advance()
+func (p *parser) parseModule() {
+	p.advance()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected module name"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected module name"))
 		return
 	}
 
-	moduleName := pb.parseIdentifier()
+	moduleName := p.parseIdentifier()
 
-	if pb.tok().ID != TokenOpenBrace {
-		pb.reportError(fmt.Errorf("expected module contents"))
+	if p.tok().ID != TokenOpenBrace {
+		p.reportError(fmt.Errorf("expected module contents"))
 		return
 	}
 
-	pb.advance()
-	pb.pushContext(contextModule, moduleName)
+	p.advance()
+	p.pushContext(contextModule, moduleName)
 }

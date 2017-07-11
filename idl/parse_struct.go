@@ -6,34 +6,34 @@ import (
 
 // Handle the opening of a struct
 // struct Foo {
-func (pb *parser) parseStruct() {
-	pb.advance()
+func (p *parser) parseStruct() {
+	p.advance()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected struct name"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected struct name"))
 		return
 	}
 
-	structName := pb.parseIdentifier()
+	structName := p.parseIdentifier()
 
 	inherits := []string{}
-	switch pb.tok().ID {
+	switch p.tok().ID {
 	case TokenOpenBrace:
 		break
 	case TokenColon:
-		pb.advance()
-		if pb.tok().ID != TokenIdentifier {
-			pb.reportError(fmt.Errorf("expected struct inheritance"))
+		p.advance()
+		if p.tok().ID != TokenIdentifier {
+			p.reportError(fmt.Errorf("expected struct inheritance"))
 			return
 		}
 
-		for pb.tok().ID == TokenIdentifier {
-			name := pb.parseIdentifier()
+		for p.tok().ID == TokenIdentifier {
+			name := p.parseIdentifier()
 			inherits = append(inherits, name)
 
-			switch pb.tok().ID {
+			switch p.tok().ID {
 			case TokenComma:
-				pb.advance()
+				p.advance()
 				continue
 			case TokenOpenBrace:
 				break
@@ -41,30 +41,30 @@ func (pb *parser) parseStruct() {
 		}
 	}
 
-	if pb.tok().ID != TokenOpenBrace {
-		pb.reportError(fmt.Errorf("expected struct contents"))
+	if p.tok().ID != TokenOpenBrace {
+		p.reportError(fmt.Errorf("expected struct contents"))
 		return
 	}
 
-	pb.advance()
-	pb.pushContext(contextStruct, structName)
-	pb.currentStruct.Inherits = inherits
+	p.advance()
+	p.pushContext(contextStruct, structName)
+	p.currentStruct.Inherits = inherits
 }
 
 // Handle data members inside a struct
 // unsigned long data;
-func (pb *parser) parseStructMember() {
-	typeName := pb.parseType()
+func (p *parser) parseStructMember() {
+	typeName := p.parseType()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected member name"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected member name"))
 		return
 	}
 
-	memberName := pb.parseIdentifier()
+	memberName := p.parseIdentifier()
 
-	if pb.tok().ID != TokenSemicolon {
-		pb.reportError(fmt.Errorf("expected semicolon"))
+	if p.tok().ID != TokenSemicolon {
+		p.reportError(fmt.Errorf("expected semicolon"))
 		return
 	}
 
@@ -72,7 +72,7 @@ func (pb *parser) parseStructMember() {
 		fmt.Printf("Read struct member: %s of type %s\n", memberName, typeName)
 	}
 
-	pb.currentStruct.Members = append(pb.currentStruct.Members, Member{
+	p.currentStruct.Members = append(p.currentStruct.Members, Member{
 		Name: memberName,
 		Type: typeName,
 	})

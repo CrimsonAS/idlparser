@@ -143,7 +143,7 @@ type lexer struct {
 }
 
 // Add the given token to the stream
-func (lb *lexer) pushToken(tok TokenID, val string) {
+func (l *lexer) pushToken(tok TokenID, val string) {
 	if lexDebug {
 		if len(val) > 0 {
 			fmt.Printf("Lexed token %s val %s\n", tok, val)
@@ -151,119 +151,119 @@ func (lb *lexer) pushToken(tok TokenID, val string) {
 			fmt.Printf("Lexed token %s\n", tok)
 		}
 	}
-	lb.tokens = append(lb.tokens, Token{tok, val})
+	l.tokens = append(l.tokens, Token{tok, val})
 }
 
-func (lb *lexer) reportError(err error) {
-	lb.errors = append(lb.errors, err)
+func (l *lexer) reportError(err error) {
+	l.errors = append(l.errors, err)
 }
 
-func (lb *lexer) hasError() bool {
-	return len(lb.errors) != 0
+func (l *lexer) hasError() bool {
+	return len(l.errors) != 0
 }
 
-func (lb *lexer) cur() byte {
-	return lb.buf[lb.pos]
+func (l *lexer) cur() byte {
+	return l.buf[l.pos]
 }
 
-func (lb *lexer) skipWhitespace() {
-	for !lb.atEnd() && (lb.cur() == ' ' || lb.cur() == '\t') {
-		lb.advance()
+func (l *lexer) skipWhitespace() {
+	for !l.atEnd() && (l.cur() == ' ' || l.cur() == '\t') {
+		l.advance()
 	}
 }
 
-func (lb *lexer) readUntilNot(delims []byte) ([]byte, error) {
+func (l *lexer) readUntilNot(delims []byte) ([]byte, error) {
 	buf := []byte{}
 	found := true
-	for !lb.atEnd() && found {
+	for !l.atEnd() && found {
 		found = false
 		for _, delim := range delims {
-			if lb.cur() == delim {
+			if l.cur() == delim {
 				found = true
 				break
 			}
 		}
 
 		if found {
-			buf = append(buf, lb.cur())
-			lb.advance()
+			buf = append(buf, l.cur())
+			l.advance()
 		} else {
-			lb.rewind()
+			l.rewind()
 		}
 	}
 
-	if lb.atEnd() {
+	if l.atEnd() {
 		return nil, fmt.Errorf("didn't find %s, when I wanted it", delims)
 	}
 
 	return buf, nil
 }
 
-func (lb *lexer) readUntilMany(delims []byte) ([]byte, error) {
+func (l *lexer) readUntilMany(delims []byte) ([]byte, error) {
 	buf := []byte{}
 	found := false
-	for !lb.atEnd() && !found {
+	for !l.atEnd() && !found {
 		for _, delim := range delims {
-			if lb.cur() == delim {
+			if l.cur() == delim {
 				found = true
 				break
 			}
 		}
 
 		if !found {
-			buf = append(buf, lb.cur())
-			lb.advance()
+			buf = append(buf, l.cur())
+			l.advance()
 		}
 	}
 
-	if lb.atEnd() {
+	if l.atEnd() {
 		return nil, fmt.Errorf("didn't find %s, when I wanted it", delims)
 	}
 
 	return buf, nil
 }
 
-func (lb *lexer) readUntil(delim byte) ([]byte, error) {
-	return lb.readUntilMany([]byte{delim})
+func (l *lexer) readUntil(delim byte) ([]byte, error) {
+	return l.readUntilMany([]byte{delim})
 }
 
-func (lb *lexer) next() byte {
-	return lb.buf[lb.pos+1]
+func (l *lexer) next() byte {
+	return l.buf[l.pos+1]
 }
 
-func (lb *lexer) atEnd() bool {
-	return lb.pos >= len(lb.buf)
+func (l *lexer) atEnd() bool {
+	return l.pos >= len(l.buf)
 }
 
-func (lb *lexer) advance() {
-	lb.pos++
+func (l *lexer) advance() {
+	l.pos++
 }
 
-func (lb *lexer) rewind() {
-	lb.pos--
+func (l *lexer) rewind() {
+	l.pos--
 }
 
-func (lb *lexer) lexComment() {
-	if lb.next() == '/' {
-		lb.readUntil('\n')
+func (l *lexer) lexComment() {
+	if l.next() == '/' {
+		l.readUntil('\n')
 	}
 }
 
-func (lb *lexer) lexStringLiteral() {
-	if lb.cur() != '"' {
-		lb.reportError(fmt.Errorf("expected: \", got: %c", lb.cur()))
+func (l *lexer) lexStringLiteral() {
+	if l.cur() != '"' {
+		l.reportError(fmt.Errorf("expected: \", got: %c", l.cur()))
 		return
 	}
 
 	// skip "
-	lb.advance()
+	l.advance()
 
-	buf, err := lb.readUntil('"')
+	buf, err := l.readUntil('"')
 	if err != nil {
-		lb.reportError(fmt.Errorf("unterminated string literal"))
+		l.reportError(fmt.Errorf("unterminated string literal"))
 	}
 
-	lb.pushToken(TokenStringLiteral, string(buf))
+	l.pushToken(TokenStringLiteral, string(buf))
 }
 
 const (
@@ -285,78 +285,78 @@ const (
 // i.e. handle seqeunce<long, 10>.
 var validInIdentifiers = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_")
 
-func (lb *lexer) lexWord() {
-	buf, err := lb.readUntilNot(validInIdentifiers)
+func (l *lexer) lexWord() {
+	buf, err := l.readUntilNot(validInIdentifiers)
 	if err != nil {
-		lb.reportError(fmt.Errorf("EOF on a word?"))
+		l.reportError(fmt.Errorf("EOF on a word?"))
 	}
 
-	lb.pushToken(TokenIdentifier, string(buf))
+	l.pushToken(TokenIdentifier, string(buf))
 }
 
 // Lex a buffer of IDL data into tokens.
 // Returns the lexed tokens, and any error encountered.
 func Lex(d []byte) ([]Token, error) {
-	lb := &lexer{
+	l := &lexer{
 		buf: d,
 		pos: 0,
 	}
 
-	for !lb.atEnd() && !lb.hasError() {
-		lb.skipWhitespace()
-		if lb.atEnd() {
+	for !l.atEnd() && !l.hasError() {
+		l.skipWhitespace()
+		if l.atEnd() {
 			break
 		}
 
 		switch {
-		case lb.cur() == '/':
-			lb.lexComment()
-		case lb.cur() == '#':
-			lb.pushToken(TokenHash, "")
-		case lb.cur() == '"':
-			lb.lexStringLiteral()
-		case lb.cur() == '{':
-			lb.pushToken(TokenOpenBrace, "")
-		case lb.cur() == '}':
-			lb.pushToken(TokenCloseBrace, "")
-		case lb.cur() == '[':
-			lb.pushToken(TokenOpenSquareBracket, "")
-		case lb.cur() == ']':
-			lb.pushToken(TokenCloseSquareBracket, "")
-		case lb.cur() == '(':
-			lb.pushToken(TokenOpenBracket, "")
-		case lb.cur() == ')':
-			lb.pushToken(TokenCloseBracket, "")
-		case lb.cur() == ':':
-			lb.advance()
-			if lb.cur() == ':' {
-				lb.pushToken(TokenNamespace, "")
+		case l.cur() == '/':
+			l.lexComment()
+		case l.cur() == '#':
+			l.pushToken(TokenHash, "")
+		case l.cur() == '"':
+			l.lexStringLiteral()
+		case l.cur() == '{':
+			l.pushToken(TokenOpenBrace, "")
+		case l.cur() == '}':
+			l.pushToken(TokenCloseBrace, "")
+		case l.cur() == '[':
+			l.pushToken(TokenOpenSquareBracket, "")
+		case l.cur() == ']':
+			l.pushToken(TokenCloseSquareBracket, "")
+		case l.cur() == '(':
+			l.pushToken(TokenOpenBracket, "")
+		case l.cur() == ')':
+			l.pushToken(TokenCloseBracket, "")
+		case l.cur() == ':':
+			l.advance()
+			if l.cur() == ':' {
+				l.pushToken(TokenNamespace, "")
 			} else {
-				lb.rewind()
-				lb.pushToken(TokenColon, "")
+				l.rewind()
+				l.pushToken(TokenColon, "")
 			}
-		case lb.cur() == ';':
-			lb.pushToken(TokenSemicolon, "")
-		case lb.cur() == '=':
-			lb.pushToken(TokenEquals, "")
-		case lb.cur() == '\n':
-			lb.pushToken(TokenEndLine, "")
-		case lb.cur() == ',':
-			lb.pushToken(TokenComma, "")
-		case lb.cur() == '<':
-			lb.pushToken(TokenLessThan, "")
-		case lb.cur() == '>':
-			lb.pushToken(TokenGreaterThan, "")
-		case strings.IndexByte(string(validInIdentifiers), lb.cur()) >= 0:
-			lb.lexWord()
+		case l.cur() == ';':
+			l.pushToken(TokenSemicolon, "")
+		case l.cur() == '=':
+			l.pushToken(TokenEquals, "")
+		case l.cur() == '\n':
+			l.pushToken(TokenEndLine, "")
+		case l.cur() == ',':
+			l.pushToken(TokenComma, "")
+		case l.cur() == '<':
+			l.pushToken(TokenLessThan, "")
+		case l.cur() == '>':
+			l.pushToken(TokenGreaterThan, "")
+		case strings.IndexByte(string(validInIdentifiers), l.cur()) >= 0:
+			l.lexWord()
 		}
 
-		lb.advance()
+		l.advance()
 	}
 
-	if lb.hasError() {
-		return []Token{}, lb.errors[0]
+	if l.hasError() {
+		return []Token{}, l.errors[0]
 	}
 
-	return lb.tokens, nil
+	return l.tokens, nil
 }

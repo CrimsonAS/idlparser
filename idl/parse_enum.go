@@ -6,47 +6,47 @@ import (
 
 // Handle the start of an enum
 // enum MyEnum {
-func (pb *parser) parseEnum() {
-	pb.advance()
+func (p *parser) parseEnum() {
+	p.advance()
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected enum name"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected enum name"))
 		return
 	}
 
-	enumName := pb.parseIdentifier()
+	enumName := p.parseIdentifier()
 
-	if pb.tok().ID != TokenOpenBrace {
-		pb.reportError(fmt.Errorf("expected enum contents"))
+	if p.tok().ID != TokenOpenBrace {
+		p.reportError(fmt.Errorf("expected enum contents"))
 		return
 	}
 
-	pb.advance()
-	pb.pushContext(contextEnum, enumName)
+	p.advance()
+	p.pushContext(contextEnum, enumName)
 }
 
 // Handle a member in an enum
 // MyValue,
-func (pb *parser) parseEnumMember() {
+func (p *parser) parseEnumMember() {
 	// no leading advance, as we start at the name of the enum member.
 
-	if pb.tok().ID != TokenIdentifier {
-		pb.reportError(fmt.Errorf("expected enum value"))
+	if p.tok().ID != TokenIdentifier {
+		p.reportError(fmt.Errorf("expected enum value"))
 		return
 	}
 
-	enumName := pb.tok().Value
-	pb.advance()
+	enumName := p.tok().Value
+	p.advance()
 
-	for pb.tok().ID == TokenComma {
+	for p.tok().ID == TokenComma {
 		// eat the comma(s)
-		pb.advance()
+		p.advance()
 	}
 
 	if parseDebug {
 		fmt.Printf("Read enum member: %s\n", enumName)
 	}
-	pb.currentEnum.Members = append(pb.currentEnum.Members, Member{
+	p.currentEnum.Members = append(p.currentEnum.Members, Member{
 		Name: enumName,
 		// ### assign value?
 	})
