@@ -94,7 +94,7 @@ func (pb *parser) hasError() bool {
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
 func (pb *parser) parseType() string {
-	if pb.tok().Id != TokenIdentifier && (pb.tok().Id != TokenKeyword) {
+	if pb.tok().Id != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected type name"))
 		return ""
 	}
@@ -325,8 +325,6 @@ func Parse(toks []Token) (Module, error) {
 		switch tok.Id {
 		case TokenHash:
 			pb.parseTokenHash()
-		case TokenKeyword:
-			fallthrough
 		case TokenIdentifier:
 			pb.parseTokenWord()
 		case TokenCloseBrace:

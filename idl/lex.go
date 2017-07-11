@@ -14,8 +14,6 @@ type TokenId int
 func (tok TokenId) String() string {
 	val := ""
 	switch tok {
-	case TokenKeyword:
-		val = "keyword"
 	case TokenIdentifier:
 		val = "identifier"
 	case TokenHash:
@@ -60,11 +58,8 @@ func (tok TokenId) String() string {
 }
 
 const (
-	// A keyword (struct, interface, etc)
-	TokenKeyword = iota
-
-	// Any valid identifier (Foo in "struct Foo")
-	TokenIdentifier
+	// Any valid identifier
+	TokenIdentifier = iota
 
 	// '#'
 	TokenHash
@@ -295,31 +290,7 @@ func (lb *lexer) lexWord() {
 		lb.reportError(fmt.Errorf("EOF on a word?"))
 	}
 
-	// Find out if it is a keyword.
-	switch string(buf) {
-	case keywordModule:
-		fallthrough
-	case keywordTypedef:
-		fallthrough
-	case keywordStruct:
-		fallthrough
-	case keywordConst:
-		fallthrough
-	case keywordEnum:
-		fallthrough
-	case keywordInterface:
-		fallthrough
-	case keywordUnion:
-		fallthrough
-	case keywordIn:
-		fallthrough
-	case keywordOut:
-		fallthrough
-	case keywordInOut:
-		lb.pushToken(TokenKeyword, string(buf))
-	default:
-		lb.pushToken(TokenIdentifier, string(buf))
-	}
+	lb.pushToken(TokenIdentifier, string(buf))
 }
 
 // Lex a buffer of IDL data into tokens.

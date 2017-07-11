@@ -114,7 +114,7 @@ func (pb *parser) parseInterfaceMember() {
 	}
 
 	for {
-		if pb.tok().Id != TokenKeyword {
+		if pb.tok().Id != TokenIdentifier {
 			pb.reportError(fmt.Errorf("expected direction"))
 			return
 		}
