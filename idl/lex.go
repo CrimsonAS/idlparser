@@ -278,6 +278,8 @@ const (
 	keywordIn        = "in"
 	keywordOut       = "out"
 	keywordInOut     = "inout"
+	keywordSwitch    = "switch"
+	keywordCase      = "case"
 )
 
 // ### this needs to be improved to read types properly.

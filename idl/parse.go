@@ -250,6 +250,10 @@ func (pb *parser) parseTokenWord() {
 		pb.parseEnumMember()
 	case contextInterface:
 		pb.parseInterfaceMember()
+	case contextUnion:
+		pb.parseUnionMember()
+	default:
+		panic("unhandled context")
 	}
 }
 
