@@ -108,6 +108,7 @@ func (pb *parser) parseType() string {
 		typeName += "<" + pb.parseType()
 
 		for pb.tok().Id == TokenComma {
+			pb.advance()
 			typeName += ", " + pb.parseType()
 		}
 
