@@ -7,11 +7,11 @@ import (
 
 const lexDebug = false
 
-// A TokenId represents a type of token in an IDL file.
-type TokenId int
+// A TokenID represents a type of token in an IDL file.
+type TokenID int
 
-// Turn a TokenId into a string.
-func (tok TokenId) String() string {
+// Turn a TokenID into a string.
+func (tok TokenID) String() string {
 	val := ""
 	switch tok {
 	case TokenIdentifier:
@@ -58,58 +58,58 @@ func (tok TokenId) String() string {
 }
 
 const (
-	// Any valid identifier
+	// TokenIdentifier represents any valid identifier
 	TokenIdentifier = iota
 
-	// '#'
+	// TokenHash is a # character.
 	TokenHash
 
-	// A quoted string
+	// TokenStringLiteral represents a quoted string
 	TokenStringLiteral
 
-	// :
+	// TokenColon is a : character.
 	TokenColon
 
-	// ;
+	// TokenSemicolon is a ; character.
 	TokenSemicolon
 
-	// {
+	// TokenOpenBrace is a { character.
 	TokenOpenBrace
 
-	// }
+	// TokenCloseBrace is a } character.
 	TokenCloseBrace
 
-	// [
+	// TokenOpenSquareBracket is a [ character.
 	TokenOpenSquareBracket
 
-	//
+	// TokenCloseSquareBracket is a ] character.
 	TokenCloseSquareBracket
 
-	// (
+	// TokenOpenBracket is a ( character.
 	TokenOpenBracket
 
-	// )
+	// TokenCloseBracket is a ) character.
 	TokenCloseBracket
 
-	// =
+	// TokenEquals is a = character.
 	TokenEquals
 
-	// \n
+	// TokenEndLine is a \n character.
 	TokenEndLine
 
-	// ,
+	// TokenComma is a , character.
 	TokenComma
 
-	// <
+	// TokenLessThan is a < character.
 	TokenLessThan
 
-	// >
+	// TokenGreaterThan is a > character.
 	TokenGreaterThan
 
-	// ::
+	// TokenNamespace represents a namespace separator (::) used in types.
 	TokenNamespace
 
-	// Used for error handling
+	// TokenInvalid is a non-existent token used in error handling.
 	TokenInvalid
 )
 
@@ -117,7 +117,7 @@ const (
 type Token struct {
 	// ### these should be public
 	// Represents the type of token, e.g. TokenWord
-	Id TokenId
+	ID TokenID
 
 	// Represents the associated data of a token. For instance, TokenWord will
 	// have a value containing the word that was lexed.
@@ -127,10 +127,9 @@ type Token struct {
 // Turn a Token into a string
 func (tok Token) String() string {
 	if len(tok.Value) > 0 {
-		return fmt.Sprintf(`%s("%s")`, tok.Id, tok.Value)
-	} else {
-		return fmt.Sprintf("%s", tok.Id)
+		return fmt.Sprintf(`%s("%s")`, tok.ID, tok.Value)
 	}
+	return fmt.Sprintf("%s", tok.ID)
 }
 
 // A lexer is used to lex a byte stream in IDL format into a series of
@@ -144,7 +143,7 @@ type lexer struct {
 }
 
 // Add the given token to the stream
-func (lb *lexer) pushToken(tok TokenId, val string) {
+func (lb *lexer) pushToken(tok TokenID, val string) {
 	if lexDebug {
 		if len(val) > 0 {
 			fmt.Printf("Lexed token %s val %s\n", tok, val)
@@ -237,11 +236,11 @@ func (lb *lexer) atEnd() bool {
 }
 
 func (lb *lexer) advance() {
-	lb.pos += 1
+	lb.pos++
 }
 
 func (lb *lexer) rewind() {
-	lb.pos -= 1
+	lb.pos--
 }
 
 func (lb *lexer) lexComment() {

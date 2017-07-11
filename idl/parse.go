@@ -8,9 +8,9 @@ const parseDebug = false
 
 // A context id is used to drive the internal state machine. It is not needed
 // outside the parser.
-type contextId int32
+type contextID int32
 
-func (ctx contextId) String() string {
+func (ctx contextID) String() string {
 	switch ctx {
 	case contextGlobal:
 		return "global"
@@ -30,7 +30,7 @@ func (ctx contextId) String() string {
 }
 
 type context struct {
-	id    contextId
+	id    contextID
 	value string
 }
 
@@ -61,7 +61,7 @@ type parser struct {
 	contextStack []context
 	ppos         int
 	errors       []error
-	isEof        bool
+	isEOF        bool
 
 	// current module being populated
 	currentModule *Module
@@ -80,7 +80,7 @@ type parser struct {
 func (pb *parser) reportError(err error) {
 	// Ignore all errors after EOF, as they are likely bogus (due to our
 	// returning a silly token in that case to avoid crashes).
-	if !pb.isEof {
+	if !pb.isEOF {
 		fmt.Printf("Got parse error: %s\n", err)
 		pb.errors = append(pb.errors, err)
 	}
@@ -94,7 +94,7 @@ func (pb *parser) hasError() bool {
 // Small helper to read a type name. A type name is a bit "special" since it
 // might be one word ("int"), or multiple ("unsigned int").
 func (pb *parser) parseType() string {
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected type name"))
 		return ""
 	}
@@ -103,16 +103,16 @@ func (pb *parser) parseType() string {
 	pb.advance()
 
 	// sequence<foo>, string<foo>
-	if pb.tok().Id == TokenLessThan {
+	if pb.tok().ID == TokenLessThan {
 		pb.advance()
 		typeName += "<" + pb.parseType()
 
-		for pb.tok().Id == TokenComma {
+		for pb.tok().ID == TokenComma {
 			pb.advance()
 			typeName += ", " + pb.parseType()
 		}
 
-		if pb.tok().Id != TokenGreaterThan {
+		if pb.tok().ID != TokenGreaterThan {
 			fmt.Errorf("expected: >")
 			return ""
 		}
@@ -123,7 +123,7 @@ func (pb *parser) parseType() string {
 
 	if typeName == "unsigned" {
 		// consume an additional word
-		if pb.tok().Id != TokenIdentifier {
+		if pb.tok().ID != TokenIdentifier {
 			pb.reportError(fmt.Errorf("expected numeric type"))
 			return ""
 		}
@@ -132,13 +132,13 @@ func (pb *parser) parseType() string {
 		pb.advance()
 	} else if typeName == "long" {
 		// "long long"
-		if pb.tok().Id == TokenIdentifier && pb.tok().Value == "long" {
+		if pb.tok().ID == TokenIdentifier && pb.tok().Value == "long" {
 			typeName += " " + pb.tok().Value
 			pb.advance()
 		}
 	}
 
-	if pb.tok().Id == TokenNamespace {
+	if pb.tok().ID == TokenNamespace {
 		// Foo::Bar
 		pb.advance()
 		typeName += "::" + pb.tok().Value
@@ -149,7 +149,7 @@ func (pb *parser) parseType() string {
 }
 
 func (p *parser) parseIdentifier() string {
-	if p.tok().Id != TokenIdentifier {
+	if p.tok().ID != TokenIdentifier {
 		p.reportError(fmt.Errorf("expected identifier"))
 		return ""
 	}
@@ -157,10 +157,10 @@ func (p *parser) parseIdentifier() string {
 	identifierName := p.tok().Value
 	p.advance()
 
-	if p.tok().Id == TokenNamespace {
+	if p.tok().ID == TokenNamespace {
 		// Foo::Bar
 		p.advance()
-		if p.tok().Id != TokenIdentifier {
+		if p.tok().ID != TokenIdentifier {
 			p.reportError(fmt.Errorf("expected type name in namespace"))
 			return ""
 		}
@@ -169,12 +169,12 @@ func (p *parser) parseIdentifier() string {
 		p.advance()
 	}
 
-	if p.tok().Id == TokenOpenSquareBracket {
+	if p.tok().ID == TokenOpenSquareBracket {
 		// value[3]
 		p.advance()
 		identifierName += "["
 
-		if p.tok().Id != TokenIdentifier {
+		if p.tok().ID != TokenIdentifier {
 			p.reportError(fmt.Errorf("expected quantity"))
 			return ""
 		}
@@ -182,7 +182,7 @@ func (p *parser) parseIdentifier() string {
 		identifierName += p.tok().Value
 		p.advance()
 
-		if p.tok().Id != TokenCloseSquareBracket {
+		if p.tok().ID != TokenCloseSquareBracket {
 			p.reportError(fmt.Errorf("expected close bracket"))
 			return ""
 		}
@@ -194,17 +194,17 @@ func (p *parser) parseIdentifier() string {
 }
 
 func (p *parser) parseValue() string {
-	if p.tok().Id != TokenIdentifier &&
-		p.tok().Id != TokenLessThan &&
-		p.tok().Id != TokenStringLiteral {
+	if p.tok().ID != TokenIdentifier &&
+		p.tok().ID != TokenLessThan &&
+		p.tok().ID != TokenStringLiteral {
 		p.reportError(fmt.Errorf("expected value"))
 		return ""
 	}
 
 	val := ""
-	for p.tok().Id == TokenIdentifier ||
-		p.tok().Id == TokenLessThan ||
-		p.tok().Id == TokenStringLiteral {
+	for p.tok().ID == TokenIdentifier ||
+		p.tok().ID == TokenLessThan ||
+		p.tok().ID == TokenStringLiteral {
 		val += p.tok().Value
 		p.advance()
 	}
@@ -280,7 +280,7 @@ func (pb *parser) peekTok() Token {
 // Return the current token under parsing
 func (pb *parser) tok() Token {
 	if pb.atEnd() {
-		pb.isEof = true
+		pb.isEOF = true
 		pb.reportError(fmt.Errorf("unexpected EOF"))
 		return Token{TokenInvalid, ""}
 	}
@@ -293,7 +293,7 @@ func (pb *parser) advance() {
 		pb.advanceAndDontSkipNewLines()
 
 		// Skip all whitespace tokens.
-		if pb.tok().Id != TokenEndLine {
+		if pb.tok().ID != TokenEndLine {
 			break
 		}
 	}
@@ -304,14 +304,14 @@ func (pb *parser) advanceAndDontSkipNewLines() {
 	if parseDebug {
 		fmt.Printf("Advancing, ppos was %d/%d, old token %s new token %s\n", pb.ppos, len(pb.tokens), pb.tokens[pb.ppos], pb.tokens[pb.ppos+1])
 	}
-	pb.ppos += 1
+	pb.ppos++
 }
 
 // Parse a series of tokens, and return an AST representing the IDL's content.
 func Parse(toks []Token) (Module, error) {
 	pb := &parser{
 		tokens:        toks,
-		isEof:         false,
+		isEOF:         false,
 		currentModule: &Module{},
 	}
 	pb.rootModule = pb.currentModule
@@ -321,13 +321,11 @@ func Parse(toks []Token) (Module, error) {
 		tok := pb.tok()
 		if parseDebug {
 			if len(tok.Value) > 0 {
-				fmt.Printf("ppos %d Parsing token %s val %s\n", pb.ppos, tok.Id, tok.Value)
-			} else {
-				fmt.Printf("ppos %d Parsing token %s\n", pb.ppos, tok.Id)
+				fmt.Printf("ppos %d Parsing token %s\n", pb.ppos, tok)
 			}
 		}
 
-		switch tok.Id {
+		switch tok.ID {
 		case TokenHash:
 			pb.parseTokenHash()
 		case TokenIdentifier:
@@ -351,7 +349,7 @@ func Parse(toks []Token) (Module, error) {
 	return *pb.rootModule, nil
 }
 
-func (pb *parser) pushContext(ctx contextId, val string) {
+func (pb *parser) pushContext(ctx contextID, val string) {
 	if parseDebug {
 		fmt.Printf("Opened context: %s (%s)\n", ctx, val)
 	}

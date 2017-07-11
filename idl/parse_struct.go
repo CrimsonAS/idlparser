@@ -9,7 +9,7 @@ import (
 func (pb *parser) parseStruct() {
 	pb.advance()
 
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected struct name"))
 		return
 	}
@@ -17,21 +17,21 @@ func (pb *parser) parseStruct() {
 	structName := pb.parseIdentifier()
 
 	inherits := []string{}
-	switch pb.tok().Id {
+	switch pb.tok().ID {
 	case TokenOpenBrace:
 		break
 	case TokenColon:
 		pb.advance()
-		if pb.tok().Id != TokenIdentifier {
+		if pb.tok().ID != TokenIdentifier {
 			pb.reportError(fmt.Errorf("expected struct inheritance"))
 			return
 		}
 
-		for pb.tok().Id == TokenIdentifier {
+		for pb.tok().ID == TokenIdentifier {
 			name := pb.parseIdentifier()
 			inherits = append(inherits, name)
 
-			switch pb.tok().Id {
+			switch pb.tok().ID {
 			case TokenComma:
 				pb.advance()
 				continue
@@ -41,7 +41,7 @@ func (pb *parser) parseStruct() {
 		}
 	}
 
-	if pb.tok().Id != TokenOpenBrace {
+	if pb.tok().ID != TokenOpenBrace {
 		pb.reportError(fmt.Errorf("expected struct contents"))
 		return
 	}
@@ -56,14 +56,14 @@ func (pb *parser) parseStruct() {
 func (pb *parser) parseStructMember() {
 	typeName := pb.parseType()
 
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected member name"))
 		return
 	}
 
 	memberName := pb.parseIdentifier()
 
-	if pb.tok().Id != TokenSemicolon {
+	if pb.tok().ID != TokenSemicolon {
 		pb.reportError(fmt.Errorf("expected semicolon"))
 		return
 	}

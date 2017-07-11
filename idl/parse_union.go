@@ -22,7 +22,7 @@ func (p *parser) parseUnion() {
 		return
 	}
 
-	if p.tok().Id != TokenOpenBracket {
+	if p.tok().ID != TokenOpenBracket {
 		p.reportError(fmt.Errorf("expected open bracket before type in union"))
 		return
 	}
@@ -36,14 +36,14 @@ func (p *parser) parseUnion() {
 		return
 	}
 
-	if p.tok().Id != TokenCloseBracket {
+	if p.tok().ID != TokenCloseBracket {
 		p.reportError(fmt.Errorf("expected close bracket after type in union"))
 		return
 	}
 
 	p.advance()
 
-	if p.tok().Id != TokenOpenBrace {
+	if p.tok().ID != TokenOpenBrace {
 		p.reportError(fmt.Errorf("expected open brace after type in union"))
 		return
 	}
@@ -65,7 +65,7 @@ func (p *parser) parseUnionMember() {
 		return
 	}
 
-	if p.tok().Id != TokenOpenBracket {
+	if p.tok().ID != TokenOpenBracket {
 		p.reportError(fmt.Errorf("expected open bracket before type in union member"))
 		return
 	}
@@ -79,35 +79,35 @@ func (p *parser) parseUnionMember() {
 		return
 	}
 
-	if p.tok().Id != TokenCloseBracket {
+	if p.tok().ID != TokenCloseBracket {
 		p.reportError(fmt.Errorf("expected close bracket after type in union member"))
 		return
 	}
 
 	p.advance()
 
-	if p.tok().Id != TokenColon {
+	if p.tok().ID != TokenColon {
 		p.reportError(fmt.Errorf("expected colon after close bracket in union member"))
 		return
 	}
 
 	p.advance()
 
-	if p.tok().Id != TokenIdentifier {
+	if p.tok().ID != TokenIdentifier {
 		p.reportError(fmt.Errorf("expected var type in union member"))
 		return
 	}
 
 	varType := p.parseType()
 
-	if p.tok().Id != TokenIdentifier {
+	if p.tok().ID != TokenIdentifier {
 		p.reportError(fmt.Errorf("expected var name in union member"))
 		return
 	}
 
 	varName := p.parseIdentifier()
 
-	if p.tok().Id != TokenSemicolon {
+	if p.tok().ID != TokenSemicolon {
 		p.reportError(fmt.Errorf("expected semicolon at the end of  union member"))
 		return
 	}

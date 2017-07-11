@@ -1,6 +1,6 @@
 package idl
 
-// A generic representation of a member in the AST
+// Member provides a generic representation of a member in the AST
 type Member struct {
 	// The name of the member
 	Name string
@@ -9,13 +9,13 @@ type Member struct {
 	Type string
 }
 
-// Represents a typedef in the AST
+// TypeDef represents a typedef in the AST
 type TypeDef Member
 
-// Represents a constant in the AST
+// Constant represents a constant in the AST
 type Constant Member
 
-// Represents a struct in the AST
+// Struct represents a struct in the AST
 type Struct struct {
 	// The name of the struct
 	Name string
@@ -27,7 +27,7 @@ type Struct struct {
 	Members []Member
 }
 
-// Represents an enum in the AST
+// Enum represents an enum in the AST
 type Enum struct {
 	// The name of the enum
 	Name string
@@ -36,7 +36,7 @@ type Enum struct {
 	Members []Member
 }
 
-// The contents of a method in an Interface in the AST
+// Method represents the contents of a method in an Interface in the AST
 // For instance, "void foo(inout int foo)"
 type Method struct {
 	// The name of the method (e.g. foo)
@@ -49,7 +49,7 @@ type Method struct {
 	Parameters []string
 }
 
-// Represents an interface in the AST
+// Interface represents an interface in the AST
 type Interface struct {
 	// The name of the interface
 	Name string
@@ -61,8 +61,12 @@ type Interface struct {
 	Methods []Method
 }
 
-// A module is the base type of the AST generated from the parsed IDL.
+// Module is the base type of the AST generated from the parsed IDL.
 // It contains everything in the file in an easily accessible form.
+//
+// It can be nested (as in module Outer { module Inner { } }). An
+// empty "root" module will contain everything not inside a module
+// declaration.
 type Module struct {
 	// The name of the module
 	Name string

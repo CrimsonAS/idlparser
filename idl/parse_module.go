@@ -7,14 +7,14 @@ import (
 func (pb *parser) parseModule() {
 	pb.advance()
 
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected module name"))
 		return
 	}
 
 	moduleName := pb.parseIdentifier()
 
-	if pb.tok().Id != TokenOpenBrace {
+	if pb.tok().ID != TokenOpenBrace {
 		pb.reportError(fmt.Errorf("expected module contents"))
 		return
 	}

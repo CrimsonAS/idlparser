@@ -9,28 +9,28 @@ func (pb *parser) parseConst() {
 
 	constType := pb.parseType()
 
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected constant name"))
 		return
 	}
 
 	constName := pb.parseIdentifier()
 
-	if pb.tok().Id != TokenEquals {
+	if pb.tok().ID != TokenEquals {
 		pb.reportError(fmt.Errorf("expected equals"))
 		return
 	}
 
 	pb.advance()
 
-	if pb.tok().Id != TokenIdentifier && pb.tok().Id != TokenStringLiteral {
+	if pb.tok().ID != TokenIdentifier && pb.tok().ID != TokenStringLiteral {
 		pb.reportError(fmt.Errorf("expected constant value"))
 		return
 	}
 
 	constValue := pb.parseValue()
 
-	if pb.tok().Id != TokenSemicolon {
+	if pb.tok().ID != TokenSemicolon {
 		pb.reportError(fmt.Errorf("expected semicolon"))
 		return
 	}

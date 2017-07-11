@@ -42,8 +42,8 @@ func printModule(m idl.Module) {
 		tabs += "\t"
 	}
 
-	recurse += 1
-	defer func() { recurse -= 1 }()
+	recurse++
+	defer func() { recurse-- }()
 
 	fmt.Printf("%sModule: %s\n", tabs, m.Name)
 	fmt.Printf("%s\t%s Interfaces:\n", tabs, m.Name)

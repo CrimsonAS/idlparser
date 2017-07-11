@@ -7,14 +7,14 @@ import (
 func (pb *parser) parseInterface() {
 	pb.advance()
 
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected interface name"))
 		return
 	}
 
 	interfaceName := pb.parseIdentifier()
 
-	if pb.tok().Id == TokenSemicolon {
+	if pb.tok().ID == TokenSemicolon {
 		// interface Foo;
 		if parseDebug {
 			fmt.Printf("Read empty interface %s\n", interfaceName)
@@ -25,7 +25,7 @@ func (pb *parser) parseInterface() {
 		return
 	}
 
-	if pb.tok().Id == TokenOpenBrace {
+	if pb.tok().ID == TokenOpenBrace {
 		// interface Foo {
 		if parseDebug {
 			fmt.Printf("Read non-inheriting interface %s\n", interfaceName)
@@ -35,17 +35,17 @@ func (pb *parser) parseInterface() {
 		return
 	}
 
-	if pb.tok().Id == TokenColon {
+	if pb.tok().ID == TokenColon {
 		// interface Foo : Bar {
 		pb.advance()
 
-		if pb.tok().Id != TokenIdentifier {
+		if pb.tok().ID != TokenIdentifier {
 			pb.reportError(fmt.Errorf("expected interface inheritance name"))
 			return
 		}
 
 		inherits := []string{}
-		for pb.tok().Id == TokenIdentifier {
+		for pb.tok().ID == TokenIdentifier {
 			inheritsName := pb.parseIdentifier()
 			inherits = append(inherits, inheritsName)
 			if parseDebug {
@@ -53,15 +53,15 @@ func (pb *parser) parseInterface() {
 			}
 
 			// Multiple inheritance
-			if pb.tok().Id == TokenComma {
+			if pb.tok().ID == TokenComma {
 				pb.advance()
-			} else if pb.tok().Id != TokenOpenBrace {
+			} else if pb.tok().ID != TokenOpenBrace {
 				pb.reportError(fmt.Errorf("expected open brace"))
 				return
 			}
 		}
 
-		if pb.tok().Id != TokenOpenBrace {
+		if pb.tok().ID != TokenOpenBrace {
 			pb.reportError(fmt.Errorf("expected open brace"))
 			return
 		}
@@ -79,14 +79,14 @@ func (pb *parser) parseInterface() {
 func (pb *parser) parseInterfaceMember() {
 	returnType := pb.parseType()
 
-	if pb.tok().Id != TokenIdentifier {
+	if pb.tok().ID != TokenIdentifier {
 		pb.reportError(fmt.Errorf("expected interface member name"))
 		return
 	}
 
 	memberName := pb.parseIdentifier()
 
-	if pb.tok().Id != TokenOpenBracket {
+	if pb.tok().ID != TokenOpenBracket {
 		pb.reportError(fmt.Errorf("expected open bracket"))
 		return
 	}
@@ -101,10 +101,10 @@ func (pb *parser) parseInterfaceMember() {
 		ReturnValue: returnType,
 	}
 
-	if pb.tok().Id == TokenCloseBracket {
+	if pb.tok().ID == TokenCloseBracket {
 		// void foo();
 		pb.advance()
-		if pb.tok().Id != TokenSemicolon {
+		if pb.tok().ID != TokenSemicolon {
 			pb.reportError(fmt.Errorf("expected semicolon"))
 			return
 		}
@@ -114,7 +114,7 @@ func (pb *parser) parseInterfaceMember() {
 	}
 
 	for {
-		if pb.tok().Id != TokenIdentifier {
+		if pb.tok().ID != TokenIdentifier {
 			pb.reportError(fmt.Errorf("expected direction"))
 			return
 		}
@@ -137,7 +137,7 @@ func (pb *parser) parseInterfaceMember() {
 		paramName := ""
 
 		// Allow: "in foo bar" and "in foo"
-		if pb.tok().Id == TokenIdentifier {
+		if pb.tok().ID == TokenIdentifier {
 			paramName = pb.parseIdentifier()
 		}
 
@@ -148,7 +148,7 @@ func (pb *parser) parseInterfaceMember() {
 		}
 		m.Parameters = append(m.Parameters, full)
 
-		switch pb.tok().Id {
+		switch pb.tok().ID {
 		case TokenCloseBracket:
 			goto out
 		case TokenComma:
