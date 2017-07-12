@@ -30,6 +30,30 @@ func (t Type) String() string {
 	return fmt.Sprintf("%s", t.Name)
 }
 
+// Union provides a representation of a union in the AST
+type Union struct {
+	// The name of the union
+	Name string
+
+	// The type the union operates on
+	Discriminant Type
+
+	// The cases of the union
+	Members []UnionMember
+}
+
+// UnionMember represents a member in a Union
+type UnionMember struct {
+	// The discrimnant value for this member
+	CaseValue Type
+
+	// The type of the value returned
+	MemberType Type
+
+	// The name of the value returned
+	MemberName string
+}
+
 // Member provides a generic representation of a member in the AST
 type Member struct {
 	// The name of the member
@@ -125,6 +149,9 @@ type Module struct {
 
 	// Modules inside this module
 	Modules []Module
+
+	// Unions inside this module
+	Unions []Union
 
 	// Interfaces inside this module
 	Interfaces []Interface

@@ -68,6 +68,13 @@ func printModule(m idl.Module) {
 			fmt.Printf("%s\t\t\t%s (%s)\n", tabs, t2.Name, t2.Type)
 		}
 	}
+	fmt.Printf("%s\t%s Unions:\n", tabs, m.Name)
+	for _, t := range m.Unions {
+		fmt.Printf("%s\t\t%s (on type %s)\n", tabs, t.Name, t.Discriminant)
+		for _, t2 := range t.Members {
+			fmt.Printf("%s\t\t\tcase %s (%s %s)\n", tabs, t2.CaseValue, t2.MemberType, t2.MemberName)
+		}
+	}
 	fmt.Printf("%s\t%s Structs:\n", tabs, m.Name)
 	for _, t := range m.Structs {
 		fmt.Printf("%s\t\t%s\n", tabs, t.Name)

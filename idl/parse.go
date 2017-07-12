@@ -67,11 +67,10 @@ type parser struct {
 	// current module being populated
 	currentModule *Module
 
-	// ### these might belong on the AST instead? perhaps not, since they are
-	// only useful during setup...
 	currentEnum   *Enum
 	currentStruct *Struct
 	currentIface  *Interface
+	currentUnion  *Union
 
 	// root module that everything belongs in
 	rootModule *Module
@@ -390,6 +389,10 @@ func (p *parser) pushContext(ctx contextID, val string) {
 	}
 
 	switch ctx {
+	case contextUnion:
+		e := Union{Name: val}
+		p.currentModule.Unions = append(p.currentModule.Unions, e)
+		p.currentUnion = &p.currentModule.Unions[len(p.currentModule.Unions)-1]
 	case contextInterface:
 		e := Interface{Name: val}
 		p.currentModule.Interfaces = append(p.currentModule.Interfaces, e)
@@ -418,6 +421,8 @@ func (p *parser) popContext() {
 	cctx := p.currentContext()
 
 	switch cctx.id {
+	case contextUnion:
+		p.currentUnion = nil
 	case contextInterface:
 		p.currentIface = nil
 	case contextStruct:

@@ -48,10 +48,12 @@ func (p *parser) parseUnion() {
 		return
 	}
 
-	fmt.Printf("Read union %s switching on type %s\n", unionName, switchType)
+	if parseDebug {
+		fmt.Printf("Read union %s switching on type %s\n", unionName, switchType)
+	}
 
-	// ### TODO don't ignore switchType
 	p.pushContext(contextUnion, unionName)
+	p.currentUnion.Discriminant = switchType
 }
 
 //    case (DdsData::AnalogTimeSeries):
@@ -114,5 +116,13 @@ func (p *parser) parseUnionMember() {
 
 	p.advance()
 
-	fmt.Printf("Read union member of type %s with var name %s (%s)\n", switchType, varName, varType)
+	if parseDebug {
+		fmt.Printf("Read union member of type %s with var name %s (%s)\n", switchType, varName, varType)
+	}
+
+	p.currentUnion.Members = append(p.currentUnion.Members, UnionMember{
+		CaseValue:  switchType,
+		MemberType: varType,
+		MemberName: varName,
+	})
 }
