@@ -44,20 +44,35 @@ func idlTypeToGoType(idlType idl.Type) string {
 		rtype = fmt.Sprintf("[%d]", *idlType.Quantity)
 	}
 
-	if idlType.Name == "unsigned long" {
+	n := idlType.Name
+	if idx := strings.Index(n, "::"); idx >= 0 {
+		// strip off namespace prefix
+		n = n[idx+2:]
+	}
+
+	if n == "unsigned long" {
 		rtype += "uint32"
-	} else if idlType.Name == "long" {
+	} else if n == "boolean" {
+		rtype += "bool"
+	} else if n == "long long" {
+		rtype += "int64"
+	} else if n == "long" {
 		rtype += "int32"
-	} else if idlType.Name == "sequence" {
+	} else if n == "float" {
+		rtype += "float32"
+	} else if n == "double" {
+		rtype += "float64"
+	} else if n == "sequence" {
+		nestedType := idl.Type{Name: idlType.TemplateParameters[0].Name}
 		if len(idlType.TemplateParameters) == 1 {
-			rtype += fmt.Sprintf("[]%s", idlType.TemplateParameters[0].Name)
+			rtype += fmt.Sprintf("[]%s", idlTypeToGoType(nestedType))
 		} else if len(idlType.TemplateParameters) == 2 {
-			rtype += fmt.Sprintf("[%s]%s", idlType.TemplateParameters[2].Name, idlType.TemplateParameters[0].Name)
+			rtype += fmt.Sprintf("[%s]%s", idlType.TemplateParameters[1].Name, idlTypeToGoType(nestedType))
 		} else {
 			panic("too many params")
 		}
 	} else {
-		rtype += idlType.Name
+		rtype += n
 	}
 
 	return rtype
