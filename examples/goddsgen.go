@@ -147,6 +147,10 @@ func generateModule(m idl.Module) {
 	fmt.Printf("// Structs\n")
 	for _, t := range m.Structs {
 		fmt.Printf("type %s struct {\n", t.Name)
+		for _, t2 := range t.Inherits {
+			fmt.Printf("\t%s\n", t2)
+
+		}
 
 		for _, t2 := range t.Members {
 			fmt.Printf("\t%s %s\n", identifierToGoIdentifier(t2.Name), idlTypeToGoType(t2.Type))
