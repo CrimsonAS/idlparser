@@ -103,11 +103,27 @@ func generateModule(m idl.Module) {
 
 	fmt.Printf("\n\n")
 
+	fmt.Printf("// TypeDefs\n")
 	for _, t := range m.TypeDefs {
 		fmt.Printf("type %s %s\n", t.Name, idlTypeToGoType(t.Type))
 	}
 	fmt.Printf("\n\n")
 
+	// ### this needs a lot of fleshing out i'm sure
+	fmt.Printf("// Unions\n")
+	for _, t := range m.Unions {
+		fmt.Printf("type %s struct {\n", t.Name)
+		fmt.Printf("}\n")
+
+		for _, t2 := range t.Members {
+			fmt.Printf("func (u *%s) %s() %s {", t.Name, identifierToGoIdentifier(t2.MemberName), idlTypeToGoType(t2.MemberType))
+			fmt.Printf("return %s{}", idlTypeToGoType(t2.MemberType))
+			fmt.Printf("}\n")
+		}
+	}
+	fmt.Printf("\n\n")
+
+	fmt.Printf("// Enums\n")
 	for _, t := range m.Enums {
 		fmt.Printf("type %s int32\n", t.Name)
 		fmt.Printf("const (\n")
@@ -124,6 +140,7 @@ func generateModule(m idl.Module) {
 	}
 	fmt.Printf("\n\n")
 
+	fmt.Printf("// Structs\n")
 	for _, t := range m.Structs {
 		fmt.Printf("type %s struct {\n", t.Name)
 
