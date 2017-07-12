@@ -408,7 +408,7 @@ func (p *parser) pushContext(ctx contextID, val string) {
 	case contextModule:
 		m := Module{
 			Name:   val,
-			parent: p.currentModule,
+			Parent: p.currentModule,
 		}
 		p.currentModule.Modules = append(p.currentModule.Modules, m)
 		p.currentModule = &p.currentModule.Modules[len(p.currentModule.Modules)-1]
@@ -430,8 +430,8 @@ func (p *parser) popContext() {
 	case contextEnum:
 		p.currentEnum = nil
 	case contextModule:
-		if p.currentModule.parent != nil {
-			p.currentModule = p.currentModule.parent
+		if p.currentModule.Parent != nil {
+			p.currentModule = p.currentModule.Parent
 		}
 	}
 

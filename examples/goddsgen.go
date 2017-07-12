@@ -95,7 +95,11 @@ func identifierToGoIdentifier(identifier string) string {
 //
 //... etc. One Go module per IDL module.
 func generateModule(m idl.Module) {
-	fmt.Printf("package %s\n", m.Name)
+	if m.Parent == nil {
+		fmt.Printf("package main\n")
+		//fmt.Printf("package %s\n", m.Name)
+	}
+
 	fmt.Printf("\n\n")
 	for _, t := range m.Constants {
 		fmt.Printf("const %s = %s\n", t.Name, t.Value)

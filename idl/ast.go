@@ -145,7 +145,7 @@ type Module struct {
 	Name string
 
 	// The parent module
-	parent *Module
+	Parent *Module
 
 	// Modules inside this module
 	Modules []Module
