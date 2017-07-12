@@ -10,6 +10,10 @@ type Type struct {
 	// The name of the type, e.g. "boolean", or "sequence" in "sequence<string>"
 	Name string
 
+	// The number of this type, used for fixed size arrays, e.g: int foo[3] --
+	// Quantity will be 3. If there is no quantity, this will be nil.
+	Quantity *int
+
 	// Any parameters of the type if the type is a templated one (e.g. "string"
 	// in "sequence<string>")
 	TemplateParameters []Type

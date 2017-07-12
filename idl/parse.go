@@ -2,6 +2,7 @@ package idl
 
 import (
 	"fmt"
+	"strconv"
 )
 
 const parseDebug = false
@@ -147,6 +148,40 @@ func (p *parser) parseType() Type {
 		p.advance()
 	}
 
+	ahead := 1
+	if p.peekTok(1).ID == TokenIdentifier {
+		// ### namespaces or not?
+		ahead += 1
+	}
+
+	atok := p.peekTok(ahead)
+
+	if atok.ID == TokenOpenSquareBracket {
+		// value[3]
+		atok = p.peekTok(ahead + 1)
+
+		if atok.ID != TokenIdentifier {
+			p.reportError(fmt.Errorf("expected quantity"))
+			return t
+		}
+
+		fmt.Printf("Parse %s\n", atok.Value)
+		q, err := strconv.Atoi(atok.Value)
+		if err != nil {
+			// ### allow constants?
+			p.reportError(fmt.Errorf("expected number: %s", err))
+			return t
+		}
+
+		t.Quantity = &q
+		atok = p.peekTok(ahead + 2)
+
+		if atok.ID != TokenCloseSquareBracket {
+			p.reportError(fmt.Errorf("expected close bracket"))
+			return t
+		}
+	}
+
 	return t
 }
 
@@ -172,25 +207,12 @@ func (p *parser) parseIdentifier() string {
 	}
 
 	if p.tok().ID == TokenOpenSquareBracket {
-		// value[3]
-		p.advance()
-		identifierName += "["
-
-		if p.tok().ID != TokenIdentifier {
-			p.reportError(fmt.Errorf("expected quantity"))
-			return ""
+		// parseType() already validated, and retrieved the info.
+		for p.tok().ID != TokenCloseSquareBracket {
+			p.advance()
 		}
 
-		identifierName += p.tok().Value
-		p.advance()
-
-		if p.tok().ID != TokenCloseSquareBracket {
-			p.reportError(fmt.Errorf("expected close bracket"))
-			return ""
-		}
-
-		p.advance()
-		identifierName += "]"
+		p.advance() // eat bracket too
 	}
 
 	return identifierName
@@ -277,8 +299,8 @@ func (p *parser) atEnd() bool {
 }
 
 // Return the next token for parsing
-func (p *parser) peekTok() Token {
-	if p.atEnd() || p.ppos+1 >= len(p.tokens)-1 {
+func (p *parser) peekTok(ahead int) Token {
+	if p.atEnd() || p.ppos+ahead >= len(p.tokens)-ahead {
 		if parseDebug {
 			fmt.Printf("Peeking ahead invalid!\n")
 		}
@@ -287,7 +309,7 @@ func (p *parser) peekTok() Token {
 	if parseDebug {
 		fmt.Printf("Peeking ahead ppos %d is %s\n", p.ppos, p.tokens[p.ppos+1])
 	}
-	return p.tokens[p.ppos+1]
+	return p.tokens[p.ppos+ahead]
 }
 
 // Return the current token under parsing

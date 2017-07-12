@@ -38,23 +38,29 @@ func main() {
 
 // Turn an IDL type (like "sequence<Foo>") into a Go type ("[]Foo")
 func idlTypeToGoType(idlType idl.Type) string {
+	rtype := ""
+
+	if idlType.Quantity != nil {
+		rtype = fmt.Sprintf("[%d]", *idlType.Quantity)
+	}
+
 	if idlType.Name == "unsigned long" {
-		return "uint32"
-	}
-	if idlType.Name == "long" {
-		return "int32"
-	}
-	if idlType.Name == "sequence" {
+		rtype += "uint32"
+	} else if idlType.Name == "long" {
+		rtype += "int32"
+	} else if idlType.Name == "sequence" {
 		if len(idlType.TemplateParameters) == 1 {
-			return fmt.Sprintf("[]%s", idlType.TemplateParameters[0].Name)
+			rtype += fmt.Sprintf("[]%s", idlType.TemplateParameters[0].Name)
 		} else if len(idlType.TemplateParameters) == 2 {
-			return fmt.Sprintf("[%s]%s", idlType.TemplateParameters[2].Name, idlType.TemplateParameters[0].Name)
+			rtype += fmt.Sprintf("[%s]%s", idlType.TemplateParameters[2].Name, idlType.TemplateParameters[0].Name)
 		} else {
 			panic("too many params")
 		}
+	} else {
+		rtype += idlType.Name
 	}
 
-	return idlType.Name
+	return rtype
 }
 
 // Turn an IDL var name (like "foo_bar") into a Go-friendly CamelCase one (FooBar)
