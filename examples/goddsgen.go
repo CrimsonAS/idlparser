@@ -108,6 +108,22 @@ func generateModule(m idl.Module) {
 	}
 	fmt.Printf("\n\n")
 
+	for _, t := range m.Enums {
+		fmt.Printf("type %s int32\n", t.Name)
+		fmt.Printf("const (\n")
+
+		for idx, t2 := range t.Members {
+			if idx == 0 {
+				fmt.Printf("\t%s%s = iota\n", t.Name, t2.Name)
+			} else {
+				fmt.Printf("\t%s%s\n", t.Name, t2.Name)
+			}
+		}
+
+		fmt.Printf(")\n")
+	}
+	fmt.Printf("\n\n")
+
 	for _, t := range m.Structs {
 		fmt.Printf("type %s struct {\n", t.Name)
 
